@@ -1512,7 +1512,7 @@ console.log("results.length > 0");
 									// Only previous observation exists for the Location
 									if ((results.length == 1) && (results[0].get("ObservationStatus") == 1)) {
 										// results[0] is GCUR_OBSERVATION for previous observation
-										
+console.log("results.length == 1");										
 										// check if FinalisedDate is 30 days away
 										var isPrevObsTooOld = isObsTooOld(results[0].get("FinalisedDate"));
 										if (!isPrevObsTooOld) {
@@ -3354,13 +3354,13 @@ function numDaysBetween(d1, d2) {
 };
 
 /**
- * Returns a boolean if a previous obs (ObservationStatus = 1) is MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS days older than Today.
+ * Returns a boolean if a previous obs (ObservationStatus = 1) is _MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS days older than Today.
  */
 function isObsTooOld(finalisedDate) {
 	var today = new Date();
 	var numberOfDaysBetween = numDaysBetween(today, finalisedDate);
 	
-	if (numberOfDaysBetween > MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS)
+	if (numberOfDaysBetween > _MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS)
 		return true;
 	else
 		return false;
