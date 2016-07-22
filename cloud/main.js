@@ -1484,7 +1484,7 @@ console.log("GCUR_MMR_OBSERVER_LOCATION.length = " + results.length);
 					var locationLat = location.get("Lat");
 					var locationLng = location.get("Lng");
 					var locationShareable = location.get("Shareable");
-					
+console.log("locationShareable = " + locationShareable );					
 					var obs = null;
 				
 					var SUSPENDED_STR = "suspended";
@@ -1524,6 +1524,7 @@ console.log("results.length > 0");
 												prevOpsCuring = results[0].get("AreaCuring");
 											}
 										}
+console.log("prevOpsCuring = " + prevOpsCuring);
 									} else {
 										// current observation exists
 										observationObjId = results[0].id;
@@ -1552,6 +1553,11 @@ console.log("results.length > 0");
 												}
 											}
 										}
+console.log("areaCuring = " + areaCuring );
+console.log("validatorCuring = " + areaCuring );
+console.log("adminCuring = " + areaCuring );
+console.log("validated = " + validated );
+console.log("prevOpsCuring = " + prevOpsCuring );
 									}
 								}
 								
