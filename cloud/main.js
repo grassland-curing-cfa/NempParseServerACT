@@ -1703,7 +1703,6 @@ Parse.Cloud.define("getSimpleObservationsForUser", function(request, response) {
 	}	
 });
 
-
 Parse.Cloud.define("getObsForInputToVISCA", function(request, response) {
 	Parse.Cloud.useMasterKey();
 	
