@@ -1470,6 +1470,7 @@ Parse.Cloud.define("getSimpleObservationsForUser", function(request, response) {
 			// Create a trivial resolved promise as a base case.
 		    var promises = [];
 		    // each result is a GCUR_MMR_OBSERVER_LOCATION row
+console.log("GCUR_MMR_OBSERVER_LOCATION.length = " + results.length);
 		    _.each(results, function(result) {
 		    	var observer = result.get("Observer");
 				var observerObjId = observer.id;
@@ -1485,7 +1486,7 @@ Parse.Cloud.define("getSimpleObservationsForUser", function(request, response) {
 					var locationShareable = location.get("Shareable");
 					
 					var obs = null;
-					
+console.log(locationName);					
 					var SUSPENDED_STR = "suspended";
 					// Only find observation record for those locations that are not suspended
 		            if(locationStatus.toLowerCase() != SUSPENDED_STR.toLowerCase()) {
