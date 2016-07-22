@@ -1470,7 +1470,6 @@ Parse.Cloud.define("getSimpleObservationsForUser", function(request, response) {
 			// Create a trivial resolved promise as a base case.
 		    var promises = [];
 		    // each result is a GCUR_MMR_OBSERVER_LOCATION row
-console.log("GCUR_MMR_OBSERVER_LOCATION.length = " + results.length);
 		    _.each(results, function(result) {
 		    	var observer = result.get("Observer");
 				var observerObjId = observer.id;
@@ -1484,9 +1483,9 @@ console.log("GCUR_MMR_OBSERVER_LOCATION.length = " + results.length);
 					var locationLat = location.get("Lat");
 					var locationLng = location.get("Lng");
 					var locationShareable = location.get("Shareable");
-console.log("locationShareable = " + locationShareable );					
+					
 					var obs = null;
-				
+					
 					var SUSPENDED_STR = "suspended";
 					// Only find observation record for those locations that are not suspended
 		            if(locationStatus.toLowerCase() != SUSPENDED_STR.toLowerCase()) {
@@ -1499,7 +1498,7 @@ console.log("locationShareable = " + locationShareable );
 						promises.push(queryObservation.find({
 							success : function(results) {
 								// results are JavaScript Array of GCUR_OBSERVATION objects
-console.log(locationName + ": obs result = " + results.length);									
+								
 								var observationObjId, areaCuring, validatorCuring, adminCuring, validated;
 								var prevOpsCuring;
 								
@@ -1508,11 +1507,10 @@ console.log(locationName + ": obs result = " + results.length);
 								// result length = 2 if there are both current and previous observations
 								
 								if (results.length > 0) {
-console.log("results.length > 0");	
 									// Only previous observation exists for the Location
 									if ((results.length == 1) && (results[0].get("ObservationStatus") == 1)) {
 										// results[0] is GCUR_OBSERVATION for previous observation
-console.log("results.length == 1");										
+										
 										// check if FinalisedDate is 30 days away
 										var isPrevObsTooOld = isObsTooOld(results[0].get("FinalisedDate"));
 										if (!isPrevObsTooOld) {
@@ -1524,7 +1522,6 @@ console.log("results.length == 1");
 												prevOpsCuring = results[0].get("AreaCuring");
 											}
 										}
-console.log("prevOpsCuring = " + prevOpsCuring);
 									} else {
 										// current observation exists
 										observationObjId = results[0].id;
@@ -1553,11 +1550,6 @@ console.log("prevOpsCuring = " + prevOpsCuring);
 												}
 											}
 										}
-console.log("areaCuring = " + areaCuring );
-console.log("validatorCuring = " + areaCuring );
-console.log("adminCuring = " + areaCuring );
-console.log("validated = " + validated );
-console.log("prevOpsCuring = " + prevOpsCuring );
 									}
 								}
 								
@@ -1710,6 +1702,7 @@ console.log("prevOpsCuring = " + prevOpsCuring );
 		});
 	}	
 });
+
 
 Parse.Cloud.define("getObsForInputToVISCA", function(request, response) {
 	Parse.Cloud.useMasterKey();
