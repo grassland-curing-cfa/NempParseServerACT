@@ -1486,7 +1486,7 @@ console.log("GCUR_MMR_OBSERVER_LOCATION.length = " + results.length);
 					var locationShareable = location.get("Shareable");
 					
 					var obs = null;
-console.log(locationName);					
+				
 					var SUSPENDED_STR = "suspended";
 					// Only find observation record for those locations that are not suspended
 		            if(locationStatus.toLowerCase() != SUSPENDED_STR.toLowerCase()) {
@@ -1499,7 +1499,7 @@ console.log(locationName);
 						promises.push(queryObservation.find({
 							success : function(results) {
 								// results are JavaScript Array of GCUR_OBSERVATION objects
-								
+console.log(locationName + ": obs result = " + results.length);									
 								var observationObjId, areaCuring, validatorCuring, adminCuring, validated;
 								var prevOpsCuring;
 								
@@ -1508,6 +1508,7 @@ console.log(locationName);
 								// result length = 2 if there are both current and previous observations
 								
 								if (results.length > 0) {
+console.log("results.length > 0");	
 									// Only previous observation exists for the Location
 									if ((results.length == 1) && (results[0].get("ObservationStatus") == 1)) {
 										// results[0] is GCUR_OBSERVATION for previous observation
