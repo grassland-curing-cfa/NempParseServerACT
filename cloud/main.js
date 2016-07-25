@@ -4,6 +4,7 @@
  * Heroku app: 				https://nemp-act-dev.herokuapp.com/parse
  * Initial checkin date: 		23/02/2016
  * Following-up check date:	21/07/2016
+ 						25/07/2016: added "sendEmailRequestForValidation" function
  * https://nemp-act-dev.herokuapp.com/parse/
  */
 
@@ -66,16 +67,7 @@ Parse.Cloud.define("testMailgunJS", function(request, response) {
 Period other than daylight saving days: 11.00 pm (GMT) Wed - this is equivalent to Thursday 9.00 am (AEST, GMT+10);
 For Daylight Saving, 10.00 pm (GMT) = 9.00 am (GMT+11)
 ******/
-var j = schedule.scheduleJob({hour: 23, minute: 2, dayOfWeek: 4}, function(){
-	console.log('Scheduled Job [jobRequestForValidation] being executed...');
-	
-	if (_IS_FIRE_DANGER_PERIOD) {
-		var toPerson = process.env.VALIDATION_NOTIF_TO_PERSON;
-		var toEmails = process.env.VALIDATION_NOTIF_TO_EMAILS;
-
-		var mailgun = require('mailgun-js')({apiKey: MG_KEY, domain: MG_DOMAIN});
-		
-		var html = '<!DOCTYPE html><html>' + 
+var validationRequestEmailHtml = '<!DOCTYPE html><html>' + 
 			'<head>' + 
 			'<title>Request For Validation</title>' + 
 			'<style>' + 
@@ -83,7 +75,7 @@ var j = schedule.scheduleJob({hour: 23, minute: 2, dayOfWeek: 4}, function(){
 			'</style>' + 
 			'</head>' + 
 			'<body>' + 
-			'<p>Good morning ' + toPerson + ',</p>' + 
+			'<p>Good morning ' + process.env.VALIDATION_NOTIF_TO_PERSON + ',</p>' + 
 			'<br>' + 
 			'<p>Grassland curing data for Australian Capital Territory is now ready for checking. To validate the ground observations, please log into the ACT Grassland Curing Portal  ' + 
 			'<a href="' + GAE_APP_URL + '">' + GAE_APP_URL + '</a>.</p>' + 
@@ -114,6 +106,14 @@ var j = schedule.scheduleJob({hour: 23, minute: 2, dayOfWeek: 4}, function(){
 			'<p><i>Note: This email has been generated automatically by the ACT Grassland Curing Portal.</i></p>' + 
 			'</body>' + 
 			'</html>';
+
+Parse.Cloud.define("sendEmailRequestForValidation", function(request, response) {
+	console.log('Function [sendEmailRequestForValidation] being executed...');
+	
+	if (_IS_FIRE_DANGER_PERIOD) {
+		var toEmails = process.env.VALIDATION_NOTIF_TO_EMAILS;
+
+		var mailgun = require('mailgun-js')({apiKey: MG_KEY, domain: MG_DOMAIN});	
 		
 		var data = {
 			to: toEmails,
@@ -121,17 +121,21 @@ var j = schedule.scheduleJob({hour: 23, minute: 2, dayOfWeek: 4}, function(){
 			from: CFA_NEMP_EMAIL,
 			subject: "ACT - Grassland Curing Validation Notification",
 			text: "",
-			html: html
+			html: validationRequestEmailHtml
 		};
 
 		mailgun.messages().send(data, function (error, body) {
-			if (error)
-				console.log(error);    
-			else
+			if (error) {
+				console.log(error);
+				response.error("" + error);
+			}
+			else {
 				console.log(body);
+				response.success(body);
+			}
 		});
 	} else
-		console.log("_IS_FIRE_DANGER_PERIOD: " + _IS_FIRE_DANGER_PERIOD + "; No RequestForValidation email to be sent.");
+		response.success("_IS_FIRE_DANGER_PERIOD: " + _IS_FIRE_DANGER_PERIOD + "; No RequestForValidation email to be sent.");
 });
 	  
 // Send a "Want to become an observer" email via Mailgun
