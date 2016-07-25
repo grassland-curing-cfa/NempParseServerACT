@@ -4,7 +4,7 @@
  * Heroku app: 				https://nemp-act-dev.herokuapp.com/parse
  * Initial checkin date: 		23/02/2016
  * Following-up check date:	21/07/2016
- 						25/07/2016: added "sendEmailRequestForValidation" function
+ 							25/07/2016: added "sendEmailRequestForValidation" function
  * https://nemp-act-dev.herokuapp.com/parse/
  */
 
@@ -26,7 +26,7 @@ var CFA_NEMP_EMAIL = process.env.EMAIL_ADDR_CFA_NEMP;
 var CFA_GL_EMAIL = process.env.EMAIL_ADDR_CFA_GL;
 var _IS_DAYLIGHT_SAVING = (process.env.IS_DAYLIGHT_SAVING == "1" ? true : false);     		// boolean indicates if it is now in Daylight Saving time
 var _IS_FIRE_DANGER_PERIOD = (process.env.IS_FIRE_DANGER_PERIOD == "1" ? true : false);     	// boolean indicates if it is now in the Fire Danger Period
-var GAE_APP_URL = process.env.GAE_APP_URL;
+var GAE_APP_URL = process.env.GAE_APP_URL;			// The URL to the GAE app (appspot)
 var _MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS = 30;		// An obs with the FinalisedDate older than this number should not be returned and treated as Last Season data
 
 //var SHARED_WITH_STATES = ["VIC", "NSW"];
