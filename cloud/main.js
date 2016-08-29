@@ -5,11 +5,14 @@
  * Initial checkin date: 		23/02/2016
  * Following-up check date:	21/07/2016
  							25/07/2016: added "sendEmailRequestForValidation" function
+ 							29/08/2016: added use of "turf" package for spatial analysis and manipulation tools;
+										updated "getPrevSimpleObsSharedInfoForState" & "getSharedPrevCuringForStateForInputToVISCA"
  * https://nemp-act-dev.herokuapp.com/parse/
  */
 
 var _ = require('underscore');
 var schedule = require('node-schedule');			// https://www.npmjs.com/package/node-schedule
+var turf = require('turf');							// https://www.npmjs.com/package/turf
 
 var SUPERUSER = process.env.SUPER_USER;
 var SUPERPASSWORD = process.env.SUPER_USER_PASS;
@@ -542,15 +545,36 @@ Parse.Cloud.define("getPrevSimpleObsSharedInfoForState", function(request, respo
 	
 	var stateName = request.params.state;
 	
+	var isBufferZonePntsForStateApplied = true;
+	var bufferZonePntsForState = null;
+	
 	var sharedInfos = [];
 	
-	var queryObservation = new Parse.Query("GCUR_OBSERVATION");
-	queryObservation.include("Location");
-	queryObservation.equalTo("ObservationStatus", 1);			// Previous week's observations
-	queryObservation.limit(1000);
-	
-	queryObservation.find().then(function(obs) {
-		//console.log("obs.length=" + obs.length);
+	var querySharedJurisSettings = new Parse.Query("GCUR_SHARED_JURIS_SETTINGS");
+	querySharedJurisSettings.equalTo("Jurisdiction", stateName);		// Find the record for the input jurisdiction
+
+	// Find the "bufferZonePnts" for the input jurisdiction
+	// "bufferZonePnts" can be either the set point array, or "null" or "undefined" as well.
+	querySharedJurisSettings.first().then(function(jurisSetting) {
+		bufferZonePntsForState = jurisSetting.get("bufferZonePnts");
+			
+		if ((bufferZonePntsForState == null) || (bufferZonePntsForState == undefined))
+			isBufferZonePntsForStateApplied = false;
+			
+		return Parse.Promise.as("'bufferZonePnts' is found for jurisdiction " + stateName);
+	}, function(error) {
+		console.log("There was an error in finding Class 'GCUR_SHARED_JURIS_SETTINGS', but we continue to find previous observations.");
+		return Parse.Promise.as("There was an error in finding Class 'GCUR_SHARED_JURIS_SETTINGS', but we continue to find previous observations.");
+	}).then(function() {
+		console.log("isBufferZonePntsForStateApplied = " + isBufferZonePntsForStateApplied + " for " + stateName);
+		
+		var queryObservation = new Parse.Query("GCUR_OBSERVATION");
+		queryObservation.include("Location");
+		queryObservation.equalTo("ObservationStatus", 1);			// Previous week's observations
+		queryObservation.limit(1000);
+		
+		return queryObservation.find(); 
+	}).then(function(obs) {
 		for (var j = 0; j < obs.length; j ++) {
 			// check if FinalisedDate is 30 days away
 			var isPrevObsTooOld = isObsTooOld(obs[j].get("FinalisedDate"));
@@ -580,9 +604,9 @@ Parse.Cloud.define("getPrevSimpleObsSharedInfoForState", function(request, respo
 						prevOpsCuring = obs[j].get("AreaCuring");
 						prevOpsDate = obs[j].get("ObservationDate");
 					}
-					
-					var finalisedDate = obs[j].get("FinalisedDate");
 	
+					var finalisedDate = obs[j].get("FinalisedDate");
+					
 					// In Array; convert raw string to JSON Array
 					// For example, "[{"st":"VIC","sh":false},{"st":"QLD","sh":true},{"st":"NSW","sh":true}]"
 					if (obs[j].has("SharedBy")) {
@@ -622,6 +646,74 @@ Parse.Cloud.define("getPrevSimpleObsSharedInfoForState", function(request, respo
 			"state" : stateName,
 			"sharedInfos" : sharedInfos
 		};
+		
+		// If isBufferZonePntsForStateApplied is false OR sharedInfos contains zero element
+		if ((isBufferZonePntsForStateApplied == false) || (sharedInfos.length < 1)) {
+			console.log("Not to apply buffer zone for " + stateName + " OR sharedInfos contains zero element.");
+		}
+		// apply Turf package for buffering
+		else {
+			var searchWithin = {
+					"type": "FeatureCollection",
+					"features": [
+				      {
+				    	  "type": "Feature",
+				    	  "properties": {},
+				    	  "geometry": {
+					        "type": "Polygon",
+					        "coordinates": new Array()
+					      }
+				      }
+				    ]
+			};
+			
+			bufferZonePntsForState = JSON.parse(bufferZonePntsForState);
+			searchWithin["features"][0]["geometry"]["coordinates"].push(bufferZonePntsForState);
+
+			var pointsToCheck = {
+					"type": "FeatureCollection",
+					"features": []
+			};
+			
+			for (var j = 0; j < sharedInfos.length; j++) {
+				var obsObjId = sharedInfos[j]["obsObjId"];
+				var lat = sharedInfos[j]["lat"];
+				var lng = sharedInfos[j]["lng"];
+				
+				var featureObj = {
+						"type": "Feature",
+					    "properties": {"obsObjId" : obsObjId},
+					    "geometry": {
+					    	"type": "Point",
+					    	"coordinates": [lng, lat]
+					    }
+				};
+				
+				pointsToCheck["features"].push(featureObj);
+			}
+			
+			// Use Turf to retrieve points that are within the buffer zone
+			var ptsWithin = turf.within(pointsToCheck, searchWithin);
+			
+			var sharedInfosFiltered = [];
+			
+			console.log("Out of a total of " + sharedInfos.length + " observations, " + ptsWithin["features"].length + " are within the buffer zone of " + stateName);
+			
+			for (var m = 0; m < ptsWithin["features"].length; m++) {
+				for (var n = 0; n < sharedInfos.length; n++) {
+					if (ptsWithin["features"][m]["properties"]["obsObjId"] == sharedInfos[n]["obsObjId"]) {
+						sharedInfosFiltered.push(sharedInfos[n]);
+						break;
+					}
+				}
+			}
+			
+			returnedObj = {
+				"state" : stateName,
+				"sharedInfos" : sharedInfosFiltered
+			};
+		}
+		
 		return response.success(returnedObj);
 	}, function(error) {
 		response.error("Error: " + error.code + " " + error.message);
@@ -637,15 +729,36 @@ Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", function(reques
 	
 	var stateName = request.params.state;
 	
+	var isBufferZonePntsForStateApplied = true;
+	var bufferZonePntsForState = null;
+	
 	var sharedObsArr = [];
 	
-	var queryObservation = new Parse.Query("GCUR_OBSERVATION");
-	queryObservation.include("Location");
-	queryObservation.equalTo("ObservationStatus", 1);			// Previous week's observations
-	queryObservation.limit(1000);
+	var querySharedJurisSettings = new Parse.Query("GCUR_SHARED_JURIS_SETTINGS");
+	querySharedJurisSettings.equalTo("Jurisdiction", stateName);		// Find the record for the input jurisdiction
+
+	// Find the "bufferZonePnts" for the input jurisdiction
+	// "bufferZonePnts" can be either the set point array, or "null" or "undefined" as well.
+	querySharedJurisSettings.first().then(function(jurisSetting) {
+		bufferZonePntsForState = jurisSetting.get("bufferZonePnts");
+			
+		if ((bufferZonePntsForState == null) || (bufferZonePntsForState == undefined))
+			isBufferZonePntsForStateApplied = false;
+			
+		return Parse.Promise.as("'bufferZonePnts' is found for jurisdiction " + stateName);
+	}, function(error) {
+		console.log("There was an error in finding Class 'GCUR_SHARED_JURIS_SETTINGS', but we continue to find previous observations.");
+		return Parse.Promise.as("There was an error in finding Class 'GCUR_SHARED_JURIS_SETTINGS', but we continue to find previous observations.");
+	}).then(function() {
+		console.log("isBufferZonePntsForStateApplied = " + isBufferZonePntsForStateApplied + " for " + stateName);
 	
-	queryObservation.find().then(function(obs) {
-		//console.log("obs.length=" + obs.length);
+		var queryObservation = new Parse.Query("GCUR_OBSERVATION");
+		queryObservation.include("Location");
+		queryObservation.equalTo("ObservationStatus", 1);			// Previous week's observations
+		queryObservation.limit(1000);
+	
+		return queryObservation.find();
+	}).then(function(obs) {
 		for (var j = 0; j < obs.length; j ++) {
 			// check if FinalisedDate is 30 days away
 			var isPrevObsTooOld = isObsTooOld(obs[j].get("FinalisedDate"));
@@ -707,6 +820,74 @@ Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", function(reques
 			"state" : stateName,
 			"sharedObsArr" : sharedObsArr
 		};
+		
+		// If isBufferZonePntsForStateApplied is false OR sharedObsArr contains zero element
+		if ((isBufferZonePntsForStateApplied == false) || (sharedObsArr.length < 1)) {
+			console.log("Not to apply buffer zone for " + stateName + " OR sharedObsArr contains zero element.");
+		}
+		// apply Turf package for buffering
+		else {
+			var searchWithin = {
+					"type": "FeatureCollection",
+					"features": [
+				      {
+				    	  "type": "Feature",
+				    	  "properties": {},
+				    	  "geometry": {
+					        "type": "Polygon",
+					        "coordinates": new Array()
+					      }
+				      }
+				    ]
+			};
+			
+			bufferZonePntsForState = JSON.parse(bufferZonePntsForState);
+			searchWithin["features"][0]["geometry"]["coordinates"].push(bufferZonePntsForState);
+
+			var pointsToCheck = {
+					"type": "FeatureCollection",
+					"features": []
+			};
+			
+			for (var j = 0; j < sharedObsArr.length; j++) {
+				var obsObjId = sharedObsArr[j]["obsObjId"];
+				var lat = sharedObsArr[j]["lat"];
+				var lng = sharedObsArr[j]["lng"];
+				
+				var featureObj = {
+						"type": "Feature",
+					    "properties": {"obsObjId" : obsObjId},
+					    "geometry": {
+					    	"type": "Point",
+					    	"coordinates": [lng, lat]
+					    }
+				};
+				
+				pointsToCheck["features"].push(featureObj);
+			}
+			
+			// Use Turf to retrieve points that are within the buffer zone
+			var ptsWithin = turf.within(pointsToCheck, searchWithin);
+			
+			var sharedObsArrFiltered = [];
+			
+			console.log("Out of a total of " + sharedObsArr.length + " observations, " + ptsWithin["features"].length + " are within the buffer zone of " + stateName);
+			
+			for (var m = 0; m < ptsWithin["features"].length; m++) {
+				for (var n = 0; n < sharedObsArr.length; n++) {
+					if (ptsWithin["features"][m]["properties"]["obsObjId"] == sharedObsArr[n]["obsObjId"]) {
+						sharedObsArrFiltered.push(sharedObsArr[n]);
+						break;
+					}
+				}
+			}
+			
+			returnedObj = {
+				"state" : stateName,
+				"sharedObsArr" : sharedObsArrFiltered
+			};
+		}
+		
 		return response.success(returnedObj);
 	}, function(error) {
 		response.error("Error: " + error.code + " " + error.message);
