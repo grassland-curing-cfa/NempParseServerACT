@@ -14,6 +14,7 @@
 var _ = require('underscore');
 var schedule = require('node-schedule');			// https://www.npmjs.com/package/node-schedule
 var turf = require('turf');							// https://www.npmjs.com/package/turf
+var sendinblue = require('sendinblue-api');
 
 var SUPERUSER = process.env.SUPER_USER;
 var SUPERPASSWORD = process.env.SUPER_USER_PASS;
@@ -39,6 +40,27 @@ var _MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS = 30;		// An obs with the FinalisedDate o
 // For example:
 Parse.Cloud.define("hello", function(request, response) {
   response.success("Hello world from " + process.env.APP_NAME);
+});
+
+Parse.Cloud.define("sendViaSIB", function(request, response) {
+	response.success("Sending an email via Sendinblue API...");
+
+	var parameters = { "apiKey": "fYzm7vGC1VytZkpc", "timeout": 5000 };
+	var sendinObj = new sendinblue(parameters);
+
+	var input =	{ 'to': { 'a.chen@cfa.vic.gov.au': 'to whom!' },
+		'from': ['from@email.com', 'from email!'],
+		'subject': 'Test mail form sendinblue',
+		'html': 'This is the <h1>HTML</h1>'
+	};
+
+	sendinObj.send_email(input, function(err, response){
+	    if(err){
+	        console.log(err);
+	    } else {
+	        console.log(response);
+	    }
+	});
 });
 
 Parse.Cloud.define("getDateInAEST", function(request, response) {

@@ -17,7 +17,8 @@
     "mailgun-js": "^0.7.7",
     "cors": "*",
     "node-schedule": "~1.1.1",
-    "turf": "~3.0.14"
+    "turf": "~3.0.14",
+    "sendinblue-api": "^1.0.0"
   },
   "scripts": {
     "start": "node index.js"
