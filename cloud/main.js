@@ -333,8 +333,8 @@ Parse.Cloud.define("exportEmailsForActiveUsers", function(request, response) {
 		for (var i = 0; i < results.length; i++) {
 			var role = results[i].get("role");
 			var status = results[i].get("status");
-			if (status && ((role.get("name") == "Observers") || (role.get("name") == "Validators"))) {
-			//if (status) {	// only select active users
+			//if (status && ((role.get("name") == "Observers") || (role.get("name") == "Validators"))) {
+			if (status) {	// only select active users
 				var user = results[i].get("user");
 				var email = user.get("email");
 				
