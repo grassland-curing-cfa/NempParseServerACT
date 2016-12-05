@@ -73,14 +73,14 @@ Parse.Cloud.define("testPostmark", function(request, response) {
 	    {
 	        "From": CFA_NEMP_EMAIL,
 	        "To": "a.chen@cfa.vic.gov.au",
-	        "Subject": "Test #1",
-	        "TextBody": validationRequestEmailHtml
+	        "Subject": "validationRequestEmailHtml #1",
+	        "HtmlBody": validationRequestEmailHtml
 	    },
 	    {
 	        "From": CFA_NEMP_EMAIL,
 	        "To": "grassland.curing.cfa@gmail.com",
-	        "Subject": "Test #2",
-	        "TextBody": validationRequestEmailHtml
+	        "Subject": "validationRequestEmailHtml #2",
+	        "HtmlBody": validationRequestEmailHtml
 	    }
 	];
 
