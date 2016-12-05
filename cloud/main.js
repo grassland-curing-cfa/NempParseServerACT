@@ -101,10 +101,10 @@ Parse.Cloud.define("testPostmark", function(request, response) {
 
 	client.sendEmailBatch(messages, function (error, batchResults) {
 	    if(error) {
-	        console.error("Unable to send via postmark: " + error.message + ". Details: " + JSON.stringify(result));
+	        console.error("Unable to send via postmark: " + error.message + ". Details: " + JSON.stringify(batchResults));
 	        return;
 	    }
-	    console.info("Sent to postmark for delivery: " + JSON.stringify(result))
+	    console.info("Sent to postmark for delivery: " + JSON.stringify(batchResults))
 	});
 });
 
