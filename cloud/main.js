@@ -79,7 +79,7 @@ Parse.Cloud.define("testPostmark", function(request, response) {
 	        console.error("Unable to send via postmark: " + error.message);
 	        return;
 	    }
-	    console.info("Sent to postmark for delivery: " + result)
+	    console.info("Sent to postmark for delivery: " + result.message)
 	});
 });
 
