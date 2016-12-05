@@ -69,12 +69,37 @@ Parse.Cloud.define("testPostmark", function(request, response) {
 
 	var client = new postmark.Client("338e8fdd-bf38-46b7-afe1-33418c897103");
 
+	var messages = [
+	    {
+	        "From": CFA_NEMP_EMAIL,
+	        "To": "a.chen@cfa.vic.gov.au",
+	        "Subject": "Test #1",
+	        "TextBody": validationRequestEmailHtml
+	    },
+	    {
+	        "From": CFA_NEMP_EMAIL,
+	        "To": "grassland.curing.cfa@gmail.com",
+	        "Subject": "Test #2",
+	        "TextBody": validationRequestEmailHtml
+	    }
+	];
+
+	/*
 	client.sendEmail({
 		"From": CFA_NEMP_EMAIL, 
     	"Bcc": "a.chen@cfa.vic.gov.au", 
     	"Subject": "Test", 
-   		'HtmlBody': '<strong>Hello</strong> dear Postmark user via nodejs.'
+   		'HtmlBody': validationRequestEmailHtml
 	}, function(error, result) {
+	    if(error) {
+	        console.error("Unable to send via postmark: " + error.message + ". Details: " + JSON.stringify(result));
+	        return;
+	    }
+	    console.info("Sent to postmark for delivery: " + JSON.stringify(result))
+	});
+	*/
+
+	postmark.sendEmailBatch(messages, function (error, batchResults) {
 	    if(error) {
 	        console.error("Unable to send via postmark: " + error.message + ". Details: " + JSON.stringify(result));
 	        return;
