@@ -76,7 +76,7 @@ Parse.Cloud.define("testPostmark", function(request, response) {
    		'HtmlBody': '<strong>Hello</strong> dear Postmark user via nodejs.'
 	}, function(error, result) {
 	    if(error) {
-	        console.error("Unable to send via postmark: " + error.message);
+	        console.error("Unable to send via postmark: " + error.message + ". Details: " + JSON.stringify(result));
 	        return;
 	    }
 	    console.info("Sent to postmark for delivery: " + JSON.stringify(result))
