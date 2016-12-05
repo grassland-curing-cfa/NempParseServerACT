@@ -15,6 +15,7 @@ var _ = require('underscore');
 var schedule = require('node-schedule');			// https://www.npmjs.com/package/node-schedule
 var turf = require('turf');							// https://www.npmjs.com/package/turf
 var sendinblue = require('sendinblue-api');
+var postmark = require("postmark");
 
 var SUPERUSER = process.env.SUPER_USER;
 var SUPERPASSWORD = process.env.SUPER_USER_PASS;
@@ -60,6 +61,25 @@ Parse.Cloud.define("sendViaSIB", function(request, response) {
 	    } else {
 	        console.log(response);
 	    }
+	});
+});
+
+Parse.Cloud.define("testPostmark", function(request, response) {
+	response.success("Sending an email via postmark ...");
+
+	var client = new postmark.Client("338e8fdd-bf38-46b7-afe1-33418c897103");
+
+	client.sendEmail({
+		"From": CFA_NEMP_EMAIL, 
+    	"Bcc": "a.chen@cfa.vic.gov.au", 
+    	"Subject": "Test", 
+   		'HtmlBody': '<strong>Hello</strong> dear Postmark user via nodejs.'
+	}, function(error, result) {
+	    if(error) {
+	        console.error("Unable to send via postmark: " + error.message);
+	        return;
+	    }
+	    console.info("Sent to postmark for delivery: " + result)
 	});
 });
 
