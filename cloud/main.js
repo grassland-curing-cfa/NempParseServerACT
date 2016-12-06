@@ -446,10 +446,10 @@ Parse.Cloud.define("exportAllValAdminEmails", function(request, response) {
 				var email = user.get("email");
 				
 				if (recipientList.indexOf(email) == -1) {
-					console.log(role.get("name") + " - Email [" + email + "] being added in recipientList.");
+					console.log(role.get("name") + "	- Email [" + email + "] being added in recipientList.");
 					recipientList = recipientList + email + ";";
 				} else
-					console.log(role.get("name") + " - Email [" + email + "] already added in recipientList.");
+					console.log(role.get("name") + "	- Email [" + email + "] already added in recipientList.");
 			}
 		}
 		response.success(recipientList);	
