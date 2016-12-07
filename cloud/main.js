@@ -119,6 +119,7 @@ Parse.Cloud.define("testMailgunJS", function(request, response) {
   var data = {
     from: CFA_NEMP_EMAIL,
     to: 'a.chen@cfa.vic.gov.au',
+    cc: 'grassland.curing.cfa@gmail.com',
     bcc: 'tttchen2004@yahoo.com',
     subject: 'Hello from ' + process.env.SERVER_URL,
     text: '',
