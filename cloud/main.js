@@ -117,7 +117,7 @@ Parse.Cloud.define("testMailgunJS", function(request, response) {
   var mailgun = require('mailgun-js')({apiKey: MG_KEY, domain: MG_DOMAIN});
   
   var data = {
-    from: 'Excited User <me@samples.mailgun.org>',
+    from: CFA_NEMP_EMAIL,
     to: 'a.chen@cfa.vic.gov.au',
     bcc: 'tttchen2004@yahoo.com',
     subject: 'Hello from ' + process.env.SERVER_URL,
