@@ -115,15 +115,17 @@ Parse.Cloud.define("getDateInAEST", function(request, response) {
 
 Parse.Cloud.define("testMailgunJS", function(request, response) {
   var mailgun = require('mailgun-js')({apiKey: MG_KEY, domain: MG_DOMAIN});
+
+  var toEmail = request.params.to;
   
   var data = {
     from: CFA_NEMP_EMAIL,
-    to: 'a.chen@cfa.vic.gov.au',
-    cc: 'grassland.curing.cfa@gmail.com',
-    bcc: 'tttchen2004@yahoo.com',
-    subject: 'Hello from ' + process.env.SERVER_URL,
+    to: toEmail,
+    cc: CFA_NEMP_EMAIL,
+    bcc: 'grassland.curing.cfa@gmail.com',
+    subject: 'Hello from ' + process.env.APP_NAME,
     text: '',
-    html: 'Testing some Mailgun awesomness from <br><h1>' + process.env.SERVER_URL + '</h1>'
+    html: 'This is a testing email sent from <br><h1>' + process.env.APP_NAME + '</h1><br>' + '<p>Please do not reply to this email.</p>'
   };
   
   mailgun.messages().send(data, function (error, body) {
