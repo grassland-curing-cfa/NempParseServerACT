@@ -14,8 +14,6 @@
 var _ = require('underscore');
 var schedule = require('node-schedule');			// https://www.npmjs.com/package/node-schedule
 var turf = require('turf');							// https://www.npmjs.com/package/turf
-var sendinblue = require('sendinblue-api');
-var postmark = require("postmark");
 
 var SUPERUSER = process.env.SUPER_USER;
 var SUPERPASSWORD = process.env.SUPER_USER_PASS;
@@ -41,71 +39,6 @@ var _MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS = 30;		// An obs with the FinalisedDate o
 // For example:
 Parse.Cloud.define("hello", function(request, response) {
   response.success("Hello world from " + process.env.APP_NAME);
-});
-
-Parse.Cloud.define("sendViaSIB", function(request, response) {
-	response.success("Sending an email via Sendinblue API...");
-
-	var parameters = { "apiKey": "fYzm7vGC1VytZkpc", "timeout": 5000 };
-	var sendinObj = new sendinblue(parameters);
-
-	var input =	{ 'to': { 'a.chen@cfa.vic.gov.au': 'to whom!' },
-		'from': ['from@email.com', 'from email!'],
-		'subject': 'Test mail form sendinblue',
-		'html': 'This is the <h1>HTML</h1>'
-	};
-
-	sendinObj.send_email(input, function(err, response){
-	    if(err){
-	        console.log(err);
-	    } else {
-	        console.log(response);
-	    }
-	});
-});
-
-Parse.Cloud.define("testPostmark", function(request, response) {
-	response.success("Sending an email via postmark ...");
-
-	var client = new postmark.Client("338e8fdd-bf38-46b7-afe1-33418c897103");
-
-	var messages = [
-	    {
-	        "From": CFA_NEMP_EMAIL,
-	        "To": "a.chen@cfa.vic.gov.au",
-	        "Subject": "validationRequestEmailHtml #1",
-	        "HtmlBody": validationRequestEmailHtml
-	    },
-	    {
-	        "From": CFA_NEMP_EMAIL,
-	        "To": "grassland.curing.cfa@gmail.com",
-	        "Subject": "validationRequestEmailHtml #2",
-	        "HtmlBody": validationRequestEmailHtml
-	    }
-	];
-
-	/*
-	client.sendEmail({
-		"From": CFA_NEMP_EMAIL, 
-    	"Bcc": "a.chen@cfa.vic.gov.au", 
-    	"Subject": "Test", 
-   		'HtmlBody': validationRequestEmailHtml
-	}, function(error, result) {
-	    if(error) {
-	        console.error("Unable to send via postmark: " + error.message + ". Details: " + JSON.stringify(result));
-	        return;
-	    }
-	    console.info("Sent to postmark for delivery: " + JSON.stringify(result))
-	});
-	*/
-
-	client.sendEmailBatch(messages, function (error, batchResults) {
-	    if(error) {
-	        console.error("Unable to send via postmark: " + error.message + ". Details: " + JSON.stringify(batchResults));
-	        return;
-	    }
-	    console.info("Sent to postmark for delivery: " + JSON.stringify(batchResults))
-	});
 });
 
 Parse.Cloud.define("getDateInAEST", function(request, response) {
