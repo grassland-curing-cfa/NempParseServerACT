@@ -18,7 +18,8 @@
     "cors": "*",
     "node-schedule": "~1.1.1",
     "turf": "~3.0.14",
-    "newrelic": "~1.36.1"
+    "newrelic": "~1.36.1",
+    "@newrelic/native-metrics": "~1.0.0"
   },
   "scripts": {
     "start": "node index.js"
