@@ -1,12 +1,12 @@
 // Example express application adding the parse-server module to expose Parse
 // compatible API routes.
 
+var newrelic = require('newrelic');
 var express = require('express');
 var cors = require('cors');
 var ParseServer = require('parse-server').ParseServer;
 var path = require('path');
 var S3Adapter = require('parse-server').S3Adapter;
-var newrelic = require('newrelic');
 
 var S3AccessKey = process.env.S3_ACCESS_KEY;
 var S3SecretKey = process.env.S3_SECRET_KEY;
