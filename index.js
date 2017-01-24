@@ -2,6 +2,7 @@
 // compatible API routes.
 
 require('newrelic');
+require('@newrelic/native-metrics');
 var express = require('express');
 var cors = require('cors');
 var ParseServer = require('parse-server').ParseServer;
