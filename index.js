@@ -1,7 +1,7 @@
 // Example express application adding the parse-server module to expose Parse
 // compatible API routes.
 
-var newrelic = require('newrelic');
+require('newrelic');
 var express = require('express');
 var cors = require('cors');
 var ParseServer = require('parse-server').ParseServer;
