@@ -9,6 +9,7 @@
 								21/11/2016: NEMP-1-150: added request.user to beforeSave and afterSave triggers for GCUR_OBSERVATION & GCUR_LOCATION classes
 								01/12/2016: NEMP-1-154: Running the "applyValidationByException" Cloud function creates incorrect String on the "SharedBy" column of the GCUR_OBSERVATION table
 								02/12/2016: NEMP-1-151: Remove unnecessary Parse.User.logIn(SUPERUSER, SUPERPASSWORD) and Parse.Cloud.useMasterKey() in the Cloud function
+								30/08/2018: Created two cloud functions: "automateRunModel" & "automateFinaliseData" on the Parse Server for automating RunModel and FinaliseData jobs
  */
 
 var _ = require('underscore');
@@ -32,6 +33,9 @@ var _IS_DAYLIGHT_SAVING = (process.env.IS_DAYLIGHT_SAVING == "1" ? true : false)
 var _IS_FIRE_DANGER_PERIOD = (process.env.IS_FIRE_DANGER_PERIOD == "1" ? true : false);     // boolean indicates if it is now in the Fire Danger Period
 var GAE_APP_URL = process.env.GAE_APP_URL;			// The URL to the GAE app (appspot)
 var _MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS = process.env.MAX_DAYS_ALLOWED_FOR_PREVIOUS_OBS;		// An obs with the FinalisedDate older than this number should not be returned and treated as Last Season data
+
+var RESOLUTIONS = ["500", "6000"];
+var SUPERUSER_OBJECTID = "cgPB2QktMQ";
 
 //var SHARED_WITH_STATES = ["VIC", "NSW"];
 
