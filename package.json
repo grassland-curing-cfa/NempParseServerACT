@@ -12,14 +12,12 @@
     "express": "~4.11.x",
     "kerberos": "~0.0.x",
     "parse": "~1.8.0",
-    "parse-server": "~2.2.25",
+    "parse-server": "2.2.25",
     "underscore": "~1.8.3",
     "mailgun-js": "^0.7.7",
     "cors": "*",
     "node-schedule": "~1.1.1",
-    "turf": "~3.0.14",
-    "newrelic": "~1.36.1",
-    "@newrelic/native-metrics": "~1.0.0"
+    "turf": "~3.0.14"
   },
   "scripts": {
     "start": "node index.js"
