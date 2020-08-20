@@ -1392,7 +1392,10 @@ Parse.Cloud.define("getAllSimpleMMRUserRoleForUser", async (request) => {
 	}
 });
 
-Parse.Cloud.define("getSimpleObservationsForUser", function(request, response) {
+/**
+ * Show observation list after selecting a district or selecting all districts
+ */
+Parse.Cloud.define("getSimpleObservationsForUser", (request) => {
 	var userObjectId = request.params.objectId;
 	var userRoleName = request.params.roleName;
 	var obsList = [];	// the output array for response
@@ -1435,7 +1438,7 @@ Parse.Cloud.define("getSimpleObservationsForUser", function(request, response) {
 		queryMMR.include("Observer");
 		queryMMR.include("Location");
 		queryMMR.limit(1000);
-		queryMMR.find({ useMasterKey: true }).then(function(results) {
+		return queryMMR.find({ useMasterKey: true }).then(function(results) {
 			// Create a trivial resolved promise as a base case.
 		    var promises = [];
 		    // each result is a GCUR_MMR_OBSERVER_LOCATION row
@@ -1539,18 +1542,18 @@ Parse.Cloud.define("getSimpleObservationsForUser", function(request, response) {
 								obsList.push(obs);							
 							},
 							error : function(error) {
-								return Parse.Promise.error("There was an error in finding Observations.");
+								return Promise.reject("There was an error in finding Observations.");
 							}
 						}));
 		            }
 				}
 		    });
 		    // Return a new promise that is resolved when all of the promises are resolved
-		    return Parse.Promise.when(promises);
+		    return Promise.all(promises);
 		}).then(function() {
-		    response.success(obsList);
+		    return obsList;
 		}, function(error) {
-			  response.error("Error: " + error.code + " " + error.message);
+			throw new Error("Error: " + error.code + " " + error.message);
 		});
 		
 	// If the user is Validator or Administrator
