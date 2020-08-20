@@ -17,10 +17,10 @@ var _ = require('underscore');
 var turf = require('turf');							// https://www.npmjs.com/package/turf
 const { Error } = require('parse');
 
-var SUPERUSER = process.env.SUPER_USER;
-var SUPERPASSWORD = process.env.SUPER_USER_PASS;
+//var SUPERUSER = process.env.SUPER_USER;
+//var SUPERPASSWORD = process.env.SUPER_USER_PASS;
 var NULL_VAL_INT = -1;
-var NULL_VAL_DBL = -1.0;
+//var NULL_VAL_DBL = -1.0;
 
 var APP_ID = process.env.APP_ID;
 var MASTER_KEY = process.env.MASTER_KEY;
@@ -42,8 +42,8 @@ var SUPERUSER_OBJECTID = "cgPB2QktMQ";
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
 // For example:
-Parse.Cloud.define("hello", (request) =>{
-	return "Hello world from " + process.env.APP_NAME;
+Parse.Cloud.define("hello", (request) => {
+	return Promise.resolve("Hello world from " + process.env.APP_NAME);
 });
 
 Parse.Cloud.define("getDateInAEST", function(request, response) {
