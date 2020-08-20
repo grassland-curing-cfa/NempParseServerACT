@@ -1337,57 +1337,60 @@ Parse.Cloud.define("getAllSimpleMMRUserRoleForRole", function(request, response)
 	});
 });
 
-Parse.Cloud.define("getAllSimpleMMRUserRoleForUser", function(request, response) {
-	var userObjectId = request.params.objectId;
-	var userName = null;
+/**
+ * Login and navigate to Home page
+ */
+Parse.Cloud.define("getAllSimpleMMRUserRoleForUser", async (request) => {
+	const userObjectId = request.params.objectId;
 	
-	var queryUser = new Parse.Query(Parse.User);
-	queryUser.equalTo("objectId", userObjectId);
-	queryUser.first({ useMasterKey: true }).then(function (user) {
-		  userName = user.get("username");
-		  var queryMMR = new Parse.Query("GCUR_MMR_USER_ROLE");
-		  // Include the post data with each comment
-		  queryMMR.include("user");
-		  queryMMR.include("role");
-		  queryMMR.limit(1000);
-		  return queryMMR.find({ useMasterKey: true });
-	}).then(function(results) {
-		  var roleStatsusForUser = null;
-	      var roleStatusList = []
-	      
-	      for (var i = 0; i < results.length; i++) {
+	try {
+		const queryUser = new Parse.Query(Parse.User);
+		queryUser.equalTo("objectId", userObjectId);
+		const user = await queryUser.first({ useMasterKey: true });
+		const userName = user.get("username");
+		const queryMMR = new Parse.Query("GCUR_MMR_USER_ROLE");
+		queryMMR.include("user");
+		queryMMR.include("role");
+		queryMMR.limit(1000);
+		const results = await queryMMR.find({ useMasterKey: true });
 
-	        var user = results[i].get("user");
-	        var usrObjId = user.id;
+		const roleStatusList = []
+			  
+		for (let i = 0; i < results.length; i++) {
+	        const this_user = results[i].get("user");
+	        const usrObjId = this_user.id;
 	        if (usrObjId == userObjectId) {
-	        	var role = results[i].get("role");
-	            var roleName = role.get("name");
-	            var roleObjId = role.id;
-	            var simpleRole = {
-	              "objectId": roleObjId,
-	    		  "roleName": roleName
+	        	const role = results[i].get("role");
+	            const roleName = role.get("name");
+	            const roleObjId = role.id;
+	            const simpleRole = {
+	        		"objectId": roleObjId,
+	    			"roleName": roleName
 	    	    };
 	            
-	            var status = results[i].get("status");
+				const status = results[i].get("status");
 	            
-	            var roleStatus = {
-	              "simpleRole": simpleRole,
-	              "status": status
+	            const roleStatus = {
+	              	"simpleRole": simpleRole,
+	              	"status": status
 	            };
 
 	            roleStatusList.push(roleStatus);
 	        }
-	      }
-	      roleStatsusForUser = {
-	        "userObjectId": userObjectId,
-	        "userName": userName,
-	        "roleStatusList": roleStatusList
-	      }
-	      response.success(roleStatsusForUser);
-	  }, function(error) {
-		  response.error("Error: " + error.code + " " + error.message);
-	  });
-	});
+		}
+
+		const roleStatsusForUser = {
+			"userObjectId": userObjectId,
+			"userName": userName,
+			"roleStatusList": roleStatusList
+		}
+
+		return roleStatsusForUser;
+	} catch (e) {
+		console.log(e);
+		throw new Error("Error: " + e.code + " " + e.message);
+	}
+});
 
 Parse.Cloud.define("getSimpleObservationsForUser", function(request, response) {
 	var userObjectId = request.params.objectId;
