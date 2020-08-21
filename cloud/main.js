@@ -2463,12 +2463,12 @@ Parse.Cloud.define("createUpdateCurrGCURAdjustLocation", (request) => {
 });
 
 /**
-* Finalise all data on the Parse.com side. This function is called in FinaliseModel python script
-* - Finalise GCUR_OBSERVATION class
-* - Finalise GCUR_ADJUST_DISTRICT class
-* - Finalise GCUR_ADJUST_LOCATION class
-*/
-Parse.Cloud.define("finaliseDataOnParse", function(request, response) {
+ * Finalise all data on the Parse.com side. This function is called in FinaliseModel python script
+ * - Finalise GCUR_OBSERVATION class
+ * - Finalise GCUR_ADJUST_DISTRICT class
+ * - Finalise GCUR_ADJUST_LOCATION class
+ */
+Parse.Cloud.define("finaliseDataOnParse", (request) => {
 	var result = false;
 	
 	console.log("Triggering the Cloud Function 'finaliseDataOnParse'");
@@ -2477,7 +2477,7 @@ Parse.Cloud.define("finaliseDataOnParse", function(request, response) {
 	queryPrev = new Parse.Query("GCUR_OBSERVATION");
 	queryPrev.equalTo("ObservationStatus", 1);
 	queryPrev.limit(1000);
-	queryPrev.find().then(function(prev_observations) {
+	return queryPrev.find().then(function(prev_observations) {
 		//return Parse.Object.destroyAll(prev_observations);
 		for (var i = 0; i < prev_observations.length; i ++) {
 			var obs = prev_observations[i];
@@ -2571,9 +2571,9 @@ Parse.Cloud.define("finaliseDataOnParse", function(request, response) {
 		console.log("All current GCUR_ADJUST_LOCATION records with ObservationStatus being 0 have been succssfully updated to previous records.");
 		
 		result = true;
-		response.success(result);  //saveAll is now finished and we can properly exit with confidence :-)
+		return result;  //saveAll is now finished and we can properly exit with confidence :-)
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
