@@ -1257,66 +1257,64 @@ Parse.Cloud.define("getRunModelDetails", function(request, response) {
 	});
 });
 
-Parse.Cloud.define("getAllSimpleMMRUserRoleForRole", function(request, response) {
-	var roleObjectId = request.params.objectId;
-	var roleName = null;
-	
-	var queryRole = new Parse.Query(Parse.Role);
-	queryRole.equalTo("objectId", roleObjectId);
-	queryRole.find().then(function (roles) {
-		roleName = roles[0].get("name");
+/*
+ * Called when user selects to manage a role under Manage User Access
+*/
+Parse.Cloud.define("getAllSimpleMMRUserRoleForRole", async (request) => {
+	const roleObjectId = request.params.objectId;
+  
+	const queryRole = new Parse.Query(Parse.Role);
+  	queryRole.equalTo("objectId", roleObjectId);
+	const roles = await queryRole.find();
+	const roleName = roles[0].get("name");
 
-		var queryMMR = new Parse.Query("GCUR_MMR_USER_ROLE");
-		// Include the post data with each comment
-		queryMMR.include("user");
-		queryMMR.include("role");
-		queryMMR.limit(1000);
-		return queryMMR.find({ useMasterKey: true });
-	}).then(function(results) {
-		  var userStatsusForRole = null;
-	    var userStatusList = []
-	    
-	    for (var i = 0; i < results.length; i++) {
-	
-	      var role = results[i].get("role");
-	      var roleObjId = role.id;
-	      if (roleObjId == roleObjectId) {
-	      	roleName = role.get("name");
-	      	var user = results[i].get("user");
-	          var username = user.get("username");
-	          var firstname = user.get("firstName");
-	          var lastname = user.get("lastName");
-	          var email = user.get("email");
-	          var userObjId = user.id;
-	          var simpleUser = {
-	            "objectId": userObjId,
-	  		  "username": username,
-	  		  "firstName": firstname,
-	  		  "lastName": lastname,
-	  		  "email": email
-	  	    };
-	          
-	          var status = results[i].get("status");
-	          var thisMMRObjIid = results[i].id;
-	          
-	          var userStatus = {
-	            "simpleUser": simpleUser,
-	            "status": status,
-	            "thisMMRObjId" : thisMMRObjIid
-	          };
-	
-	          userStatusList.push(userStatus);
-	      }
-	    }
-	    userStatsusForRole = {
-	      "roleObjectId": roleObjectId,
-	      "roleName": roleName,
-	      "userStatusList": userStatusList
-	    }
-	    response.success(userStatsusForRole);
-	}, function(error) {
-		  response.error("GCUR_MMR_USER_ROLE lookup failed");
-	});
+	const queryMMR = new Parse.Query("GCUR_MMR_USER_ROLE");
+	// Include the post data with each comment
+	queryMMR.include("user");
+	queryMMR.include("role");
+	queryMMR.limit(1000);
+	const results = await queryMMR.find({ useMasterKey: true });
+
+    const userStatusList = [];
+      
+	for (let i = 0; i < results.length; i++) {
+		const role = results[i].get("role");
+        const roleObjId = role.id;
+        if (roleObjId == roleObjectId) {
+        	//roleName = role.get("name");
+        	const user = results[i].get("user");
+            const username = user.get("username");
+            const firstname = user.get("firstName");
+            const lastname = user.get("lastName");
+            const email = user.get("email");
+            const userObjId = user.id;
+            const simpleUser = {
+              "objectId": userObjId,
+    		  "username": username,
+    		  "firstName": firstname,
+    		  "lastName": lastname,
+    		  "email": email
+    	    };
+            
+            const status = results[i].get("status");
+            const thisMMRObjIid = results[i].id;
+            
+            const userStatus = {
+              "simpleUser": simpleUser,
+              "status": status,
+              "thisMMRObjId" : thisMMRObjIid
+            };
+
+            userStatusList.push(userStatus);
+        }
+	  }
+	  
+      const userStatsusForRole = {
+        "roleObjectId": roleObjectId,
+        "roleName": roleName,
+        "userStatusList": userStatusList
+      }
+	 return userStatsusForRole;
 });
 
 /**
