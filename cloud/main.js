@@ -2154,7 +2154,10 @@ Parse.Cloud.define("updateLinkedLocsForObserverByIds", (request) => {
 	});
 });
 
-Parse.Cloud.define("acceptAllObserverCurings", function(request, response) {
+/**
+ * Triggered by action = acceptAllObserverValues
+ */
+Parse.Cloud.define("acceptAllObserverCurings", (request) => {
 	var validatorObjId = request.params.validatorObjId;	// String
 	
 	console.log("*** acceptAllObserverCurings function called by Validator [" + validatorObjId + "]");
@@ -2169,9 +2172,7 @@ Parse.Cloud.define("acceptAllObserverCurings", function(request, response) {
 	queryObservation.equalTo("ObservationStatus", 0);	// All current observation records
 	queryObservation.greaterThanOrEqualTo("AreaCuring", 0);
 	queryObservation.limit(1000);
-	queryObservation.find().then(function(results) {
-		var affectedObsCount = 0;
-		
+	return queryObservation.find().then(function(results) {		
 		for (var i = 0; i < results.length; i ++) {
 			var obs = results[i];
 			
@@ -2184,25 +2185,13 @@ Parse.Cloud.define("acceptAllObserverCurings", function(request, response) {
 			obs.set("ValidationDate", currDateTime);
 			obs.set("Validator", validator);
 			//obs.save();
-			
-			affectedObsCount = affectedObsCount + 1;
 		}
 		
-		Parse.Object.saveAll(results, {
-			sessionToken: sessionToken,
-		    success: function(list) {
-		        // All the objects were saved.
-		    	response.success(affectedObsCount);  //saveAll is now finished and we can properly exit with confidence :-)
-		      },
-		      error: function(error) {
-		        // An error occurred while saving one of the objects.
-		    	  response.error("Error: " + error.code + " " + error.message);
-		      },
-		    });
-		
-		//response.success(results.length);
+		return Parse.Object.saveAll(results, { useMasterKey: true });
+	}).then(function(objectList) {
+		return objectList.length;
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
