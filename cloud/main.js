@@ -394,18 +394,11 @@ Parse.Cloud.define("exportAllValAdminEmails", function(request, response) {
 	});
 });
 
-Parse.Cloud.define("countOfObservations", function(request, response) {
-	var query = new Parse.Query("GCUR_OBSERVATION");
-	
-	query.count({
-	  success: function(count) {
-	    // The count request succeeded. Show the count
-	    response.success(count);
-	  },
-	  error: function(error) {
-	    response.error("OBS lookup failed");
-	  }
-	});
+Parse.Cloud.define("countOfObservations", async (request) => {
+	const query = new Parse.Query("GCUR_OBSERVATION");
+	const countOfObs = await query.count({ useMasterKey: true });
+	console.log("*** async count=" + countOfObs);
+	return countOfObs;
 });
 
 Parse.Cloud.define("isLocationNameExist", function(request, response) {
