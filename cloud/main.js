@@ -1197,13 +1197,15 @@ Parse.Cloud.define("deleteRunModelById", function(request, response) {
 
 /**
  * Retrieve a list RunModel jobs by a list of ObjectIds
+ * Called by adminTools.jsp
+ * action=RefreshIncompleteRunModelJobsDetailsByAjax&objectIds=
  */
-Parse.Cloud.define("getRunModelDetails", function(request, response) {
+Parse.Cloud.define("getRunModelDetails", (request) => {
 	var inRunModelObjList = [];
 	var outRunModelDetails = [];
 	
 	for (var i = 0; i < request.params.runModelObjIds.length; i ++) {
-		console.log("Getting RunModel Details for ObjectId [" + request.params.runModelObjIds[i]["objectId"] + "]");
+		//console.log("Getting RunModel Details for ObjectId [" + request.params.runModelObjIds[i]["objectId"] + "]");
 		inRunModelObjList.push(request.params.runModelObjIds[i]["objectId"]);
 	}
 	
@@ -1212,7 +1214,7 @@ Parse.Cloud.define("getRunModelDetails", function(request, response) {
 	queryRunModel.containedIn("objectId", inRunModelObjList);
 	queryRunModel.include("submittedBy");	// Retrieve _USER
 	queryRunModel.limit(1000);
-	queryRunModel.find({ useMasterKey: true }).then(function(results) {
+	return queryRunModel.find({ useMasterKey: true }).then(function(results) {
 		for (var j = 0; j < results.length; j ++) {
 			var objectId = results[j].id;
 			var createdAt = results[j].createdAt;
@@ -1243,9 +1245,9 @@ Parse.Cloud.define("getRunModelDetails", function(request, response) {
 	        
 	        outRunModelDetails.push(jobDetail);
 		}
-		return response.success(outRunModelDetails);
+		return outRunModelDetails;
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
@@ -2720,11 +2722,12 @@ Parse.Cloud.define("getMostRecentDataReportByDate", function(request, response) 
 
 /**
  * Retrieve the detail about a FinaliseModel object by its input objectId
+ * Called by adminTools.jsp action=RefreshIncompleteFinaliseModelJobDetailsByAjax&objectId=
  */
-Parse.Cloud.define("getFinaliseModelDetail", function(request, response) {
+Parse.Cloud.define("getFinaliseModelDetail", (request) => {
 	var inFinaliseModelObjId = null;
 	
-	console.log("Getting FinaliseModel Detail for ObjectId [" + request.params.finaliseModelObjId + "]");
+	//console.log("Getting FinaliseModel Detail for ObjectId [" + request.params.finaliseModelObjId + "]");
 	inFinaliseModelObjId = request.params.finaliseModelObjId;
 	
 	// Query GCUR_FINALISEMODEL class
@@ -2732,7 +2735,7 @@ Parse.Cloud.define("getFinaliseModelDetail", function(request, response) {
 	queryFinaliseModel.equalTo("objectId", inFinaliseModelObjId);
 	queryFinaliseModel.include("submittedBy");	// Retrieve _USER
 	queryFinaliseModel.limit(1000);
-	queryFinaliseModel.first({ useMasterKey: true }).then(function(finaliseModelJob) {
+	return queryFinaliseModel.first({ useMasterKey: true }).then(function(finaliseModelJob) {
 		var jobDetail = {};
 		
 		if (finaliseModelJob != undefined) {
@@ -2762,9 +2765,9 @@ Parse.Cloud.define("getFinaliseModelDetail", function(request, response) {
 		    };
 		}
 		
-		return response.success(jobDetail);
+		return jobDetail;
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
