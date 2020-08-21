@@ -2067,13 +2067,21 @@ Parse.Cloud.define("getAllLocationsWithLinkedStatusForObservers", async (request
 	return locationsForUser;
 });
 
-Parse.Cloud.define("updateLinkedLocsForObserverByIds", function(request, response) {
+/**
+ * updateLinkedLocsForObserverByIds:
+ * Update association of existing locations with observer
+ * Called from ManageAccess Servlet action= linkLocationsToObserver;
+ * called from the Submit button on the Link Observer with Locations page.
+ * 
+ */
+Parse.Cloud.define("updateLinkedLocsForObserverByIds", (request) => {
+	console.log("*** updateLinkedLocsForObserverByIds called");
 	var observerObjId = request.params.observerObjId;	// String
 	var mmrObjsToBeRemoved = [];
 	var newLinkedLocsIds = [];	// all new linked locations' Ids
 	
 	for (var i = 0; i < request.params.linkedLocsIds.length; i ++) {
-		console.log("New linked locations for Observer [" + observerObjId + "]: " + request.params.linkedLocsIds[i]["locId"]);
+		//console.log("New linked locations for Observer [" + observerObjId + "]: " + request.params.linkedLocsIds[i]["locId"]);
 		newLinkedLocsIds.push(request.params.linkedLocsIds[i]["locId"]);
 	}
 	
@@ -2081,7 +2089,7 @@ Parse.Cloud.define("updateLinkedLocsForObserverByIds", function(request, respons
 	queryMMR.include("Observer");
 	queryMMR.include("Location");
 	queryMMR.limit(1000);
-	queryMMR.find({ useMasterKey: true }).then(function(results) {
+	return queryMMR.find({ useMasterKey: true }).then(function(results) {
 		for (var i = 0; i < results.length; i ++) {
 			var user = results[i].get("Observer");
 	        if (user.id == observerObjId) {
@@ -2127,7 +2135,7 @@ Parse.Cloud.define("updateLinkedLocsForObserverByIds", function(request, respons
 	        console.log("Delete aborted because of " + error.message);
 	      }
 	      
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	}).then(function(objectList) {
 		// all the objects were saved.
 		var mmrIds = [];
@@ -2137,12 +2145,12 @@ Parse.Cloud.define("updateLinkedLocsForObserverByIds", function(request, respons
 		}
 		
 		var newCreatedMMRObjIds = {
-		        "mmrObjIds": mmrIds
+		    "mmrObjIds": mmrIds
 		};
 		
-		response.success(newCreatedMMRObjIds);
+		return newCreatedMMRObjIds;
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
