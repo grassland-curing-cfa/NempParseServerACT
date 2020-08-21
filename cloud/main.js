@@ -2195,77 +2195,73 @@ Parse.Cloud.define("acceptAllObserverCurings", (request) => {
 	});
 });
 
-Parse.Cloud.define("getAdjustedCuringForAllDistricts", function(request, response) {
-	var status = request.params.status;	// "status" = 0 (current), or = 1 (previous)
-	var distAdjustedCuringList = [];	// the output array for response
+/**
+ * Called from retrieveAdjustByDistrictObjectsByStatus JS functin on the adminTools.jsp page.
+ * * Retrieve all Districts with their adjusted curings by user-specific status.
+	 * Status : 0 = current GCUR_ADJUST_DISTRICT records. Initial when page load.
+	 *			1 = previous GCUR_ADJUST_DISTRICT records. "Get Previous Values" button clicked.
+	 *			2 = archived GCUR_ADJUST_DISTRICT records. Not used.
+	 *		   -1 = empty GCUR_ADJUST_DISTRICT records. "Clear Selections" button clicked.
+ */
+Parse.Cloud.define("getAdjustedCuringForAllDistricts", async (request) => {
+	const status = request.params.status;	// "status" = 0 (current), or = 1 (previous)
+	const distAdjustedCuringList = [];	// the output array for response
 
-	var queryDistrict = new Parse.Query("GCUR_DISTRICT");
+	const queryDistrict = new Parse.Query("GCUR_DISTRICT");
 	queryDistrict.ascending("DISTRICT");
 	queryDistrict.limit(1000);
-	queryDistrict.find().then(function(results) {
-		// Create a trivial resolved promise as a base case.
-	    var promises = [];
-	    // each result is a GCUR_DISTRICT row
-	    _.each(results, function(result) {
-	    	var gcur_district = result;
-	    	var districtObjId = gcur_district.id;
-	    	var districtNo = gcur_district.get("DISTRICT");
-	    	var districtName = gcur_district.get("DIST_NAME");
-	    	
-	    	var distAdjustedCuringObj = null;
-	    	
-	    	var queryAdjustDistrict = new Parse.Query("GCUR_ADJUST_DISTRICT");
-	    	queryAdjustDistrict.ascending("district");
-	    	queryAdjustDistrict.equalTo("district", districtNo);
-	    	queryAdjustDistrict.equalTo("status", status);		// status is user-specific, so it can be either current week or previous week
-	    	queryAdjustDistrict.limit(1000);
-	    	
-	    	promises.push(queryAdjustDistrict.find({
-				success : function(results) {
-					// results are JavaScript Array of GCUR_ADJUST_DISTRICT objects;
-					// the length can only be either 0 or 1;
-					var thisDistrict, adjustedCuring, thisStatus, adjustDistrictObjId;
-					
-					if (results.length > 0) {
-						// The DISTRICT has an adjustedCuring and status record in GCUR_ADJUST_DISTRICT
-						adjustDistrictObjId = results[0].id;
-						thisDistrict = results[0].get("district");
-						adjustedCuring = results[0].get("adjustedCuring");
-						thisStatus = results[0].get("status");
-					} else {
-						// The DISTRICT does not have an adjustedCuring and status
-						adjustDistrictObjId = "";
-						thisDistrict = districtNo;
-						adjustedCuring = NULL_VAL_INT;
-						thisStatus = status;
-					}
-					
-					//
-					distAdjustedCuringObj = {
-						"adjustDistrictObjId": adjustDistrictObjId,
-						"districtNo": thisDistrict,
-						"districtName": districtName,
-						"adjustedCuring": adjustedCuring,
-						"status": thisStatus
-					};
-					distAdjustedCuringList.push(distAdjustedCuringObj);
-				},
-				error : function(error) {
-					return Parse.Promise.error("There was an error in finding GCUR_ADJUST_DISTRICTs.");
-				}
-			}));
-	    });
+	const districtResults = await queryDistrict.find();
+	for (let i = 0 ; i < districtResults.length; i ++) {
+		const gcur_district = districtResults[i];
+	    const districtObjId = gcur_district.id;
+	    const districtNo = gcur_district.get("DISTRICT");
+	    const districtName = gcur_district.get("DIST_NAME");
 	    
-	    // Return a new promise that is resolved when all of the promises are resolved
-	    return Parse.Promise.when(promises);
-	}).then(function() {
-	    response.success(distAdjustedCuringList);
-	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
-	});
+	    const queryAdjustDistrict = new Parse.Query("GCUR_ADJUST_DISTRICT");
+	    queryAdjustDistrict.ascending("district");
+	    queryAdjustDistrict.equalTo("district", districtNo);
+	    queryAdjustDistrict.equalTo("status", status);		// status is user-specific, so it can be either current week or previous week
+	    queryAdjustDistrict.limit(1000);
+
+		const adjustDistrctResults = await queryAdjustDistrict.find();
+
+		// results are JavaScript Array of GCUR_ADJUST_DISTRICT objects;
+		// the length can only be either 0 or 1;
+		let thisDistrict, adjustedCuring, thisStatus, adjustDistrictObjId;
+					
+		if (adjustDistrctResults.length > 0) {
+			// The DISTRICT has an adjustedCuring and status record in GCUR_ADJUST_DISTRICT
+			adjustDistrictObjId = adjustDistrctResults[0].id;
+			thisDistrict = adjustDistrctResults[0].get("district");
+			adjustedCuring = adjustDistrctResults[0].get("adjustedCuring");
+			thisStatus = adjustDistrctResults[0].get("status");
+		} else {
+			// The DISTRICT does not have an adjustedCuring and status
+			adjustDistrictObjId = "";
+			thisDistrict = districtNo;
+			adjustedCuring = NULL_VAL_INT;
+			thisStatus = status;
+		}
+					
+		//
+		const distAdjustedCuringObj = {
+			"adjustDistrictObjId": adjustDistrictObjId,
+			"districtNo": thisDistrict,
+			"districtName": districtName,
+			"adjustedCuring": adjustedCuring,
+			"status": thisStatus
+		};
+
+		distAdjustedCuringList.push(distAdjustedCuringObj);
+	}
+
+	return distAdjustedCuringList;
 });
 
-Parse.Cloud.define("createUpdateCurrGCURAdjustDistrict", function(request, response) {
+/**
+ * Called from Submit click on saveAdjustByDistrictValues JS function on the adminTools.jsp page.
+ */
+Parse.Cloud.define("createUpdateCurrGCURAdjustDistrict", (request) => {
 	
 	/*
 	 * An example of request parameter
@@ -2282,7 +2278,7 @@ Parse.Cloud.define("createUpdateCurrGCURAdjustDistrict", function(request, respo
 	var queryDistrict = new Parse.Query("GCUR_ADJUST_DISTRICT");
 	queryDistrict.limit(1000);
 	queryDistrict.equalTo("status", 0);	// All current GCUR_ADJUST_DISTRICT records
-	queryDistrict.find().then(function(results) {
+	return queryDistrict.find().then(function(results) {
 		
 		// Do remove about all current GCUR_ADJUST_DISTRICT records
 		return Parse.Object.destroyAll(results);
@@ -2307,7 +2303,7 @@ Parse.Cloud.define("createUpdateCurrGCURAdjustDistrict", function(request, respo
 			AdjustDistrictsToBeSaved.push(newAdjustDistrict);
 		}
 		
-		return Parse.Object.saveAll(AdjustDistrictsToBeSaved);
+		return Parse.Object.saveAll(AdjustDistrictsToBeSaved, { useMasterKey: true });
 	}, function(error) {
 		// ERROR ON destroyAll()
 		// An error occurred while deleting one or more of the objects.
@@ -2323,7 +2319,7 @@ Parse.Cloud.define("createUpdateCurrGCURAdjustDistrict", function(request, respo
 	        console.log("Delete aborted because of " + error.message);
 	      }
 	      
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	}).then(function(objectList) {
 		// all the new GCUR_ADJUST_DISTRICT objects were saved.
 		var newAdjustDistrictIds = [];
@@ -2333,12 +2329,12 @@ Parse.Cloud.define("createUpdateCurrGCURAdjustDistrict", function(request, respo
 		}
 		
 		var createdAdjustDistrictIds = {
-		        "createdAdjustDistrictIds": newAdjustDistrictIds
+		    "createdAdjustDistrictIds": newAdjustDistrictIds
 		};
 		
-		response.success(createdAdjustDistrictIds);
+		return createdAdjustDistrictIds;
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
