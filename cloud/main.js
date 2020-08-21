@@ -2614,9 +2614,9 @@ Parse.Cloud.define("getAllFinalisedDate", (request) => {
 });
 
 /**
-* Get the downloadable observation report based on user-specified finalised model objectId
-*/
-Parse.Cloud.define("getDataReport", function(request, response) {
+ * Get the downloadable observation report based on user-specified finalised model objectId
+ */
+Parse.Cloud.define("getDataReport", (request) => {
 	var finalisedModelObjectId = request.params.finalisedModelObjectId;
 	
 	var returnedObsList = [];
@@ -2624,7 +2624,7 @@ Parse.Cloud.define("getDataReport", function(request, response) {
 	var queryFinaliseModel = new Parse.Query("GCUR_FINALISEMODEL");
 	queryFinaliseModel.equalTo("objectId", finalisedModelObjectId);
 	queryFinaliseModel.limit(1000);
-	queryFinaliseModel.first().then(function(finalisedModel) {
+	return queryFinaliseModel.first().then(function(finalisedModel) {
 		var createdAt = finalisedModel.createdAt;
 		
 		var year = createdAt.getFullYear();
@@ -2712,9 +2712,9 @@ Parse.Cloud.define("getDataReport", function(request, response) {
 			returnedObsList.push(returnedObs);
 		}
 		
-	    response.success(returnedObsList);
+	   return returnedObsList;
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
