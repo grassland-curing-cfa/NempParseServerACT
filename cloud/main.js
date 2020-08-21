@@ -553,12 +553,13 @@ Parse.Cloud.run("getMaxLocationId", {}, {
 /**
  * Populate all ShareBy{STATE} columns available by "True" beforeSave a new Observation is added
  */
-Parse.Cloud.beforeSave("GCUR_OBSERVATION", function(request, response) {
-	var objId = request.object.id;
-	var loc = request.object.get("Location");
+Parse.Cloud.beforeSave("GCUR_OBSERVATION", async (request) => {
+	//console.log("*** beforeSave triggered - START");
+	const objId = request.object.id;
+	const loc = request.object.get("Location");
 	
 	if (loc != undefined) {
-		var locObjId = loc.id;
+		let locObjId = loc.id;
 		console.log("*** beforeSave triggered on GCUR_OBSERVATION for GCUR_LOCATION: " + locObjId);
 	}
 	
@@ -566,70 +567,58 @@ Parse.Cloud.beforeSave("GCUR_OBSERVATION", function(request, response) {
 		console.log("*** beforeSave requested by _User: " + request.user.id);
 	}
 	
-	var newAreaCuring = newValidatorCuring = newAdminCuring = undefined;
+	let newAreaCuring = newValidatorCuring = newAdminCuring = undefined;
 	newAreaCuring = request.object.get("AreaCuring");
 	newValidatorCuring = request.object.get("ValidatorCuring");
 	newAdminCuring = request.object.get("AdminCuring");
 				
-	console.log("* AreaCuring[" + newAreaCuring + "], ValidatorCuring[" + newValidatorCuring + "], AdminCuring[" + newAdminCuring + "]");
+	console.log("*** beforeSave: AreaCuring[ " + newAreaCuring + "], ValidatorCuring[" + newValidatorCuring + "], AdminCuring[" + newAdminCuring + "]");
 	
-	var sharedWithJurisArr = [];
+	let sharedWithJurisArr = [];
 	
+	// Adding a new GCUR_OBSERVATION object
 	if(request.object.isNew()) {
-		// Adding a new GCUR_OBSERVATION object
-		console.log("Adding a new Observation.");
-		var sharedJurisSettingsQ = new Parse.Query("GCUR_SHARED_JURIS_SETTINGS");
-		
-		sharedJurisSettingsQ.find().then(function(sjsObjs) {
-			for (var i = 0; i < sjsObjs.length; i ++) {
-				var jurisdiction = sjsObjs[i].get("Jurisdiction");
-				sharedWithJurisArr.push(jurisdiction);
-			}
+		//console.log("*** beforeSave: Adding a new Observation.");
+		const sharedJurisSettingsQ = new Parse.Query("GCUR_SHARED_JURIS_SETTINGS");
+		const sjsObjs = await sharedJurisSettingsQ.find();
+		for (let i = 0; i < sjsObjs.length; i ++) {
+			var jurisdiction = sjsObjs[i].get("Jurisdiction");
+			sharedWithJurisArr.push(jurisdiction);
+		}
+
+		let sharedByArr = [];
 			
-			var sharedByArr = [];
+		for (let i = 0; i < sharedWithJurisArr.length; i ++) {
+			sharedByArr.push({
+				"st" : sharedWithJurisArr[i],
+				"sh" : true
+			});
+		}
 			
-			for (var i = 0; i < sharedWithJurisArr.length; i ++) {
-				sharedByArr.push({
-					"st" : sharedWithJurisArr[i],
-					"sh" : true
-				});
-			}
-			
-			request.object.set("SharedBy", JSON.stringify(sharedByArr));
-			
-			response.success();
-		});
-	} else {
-		// Updating an existing GCUR_OBSERVATION object
-		console.log("*** Updating an existing Observation. GCUR_OBSERVATION objectId = " + objId);
-		response.success();
+		request.object.set("SharedBy", JSON.stringify(sharedByArr));
+	}
+	// Updating an existing GCUR_OBSERVATION object
+	else {
+		//console.log("*** beforeSave: Updating an existing Observation. GCUR_OBSERVATION objectId = " + objId);
+		if ( (newAreaCuring == undefined) && (newValidatorCuring == undefined) && (newAdminCuring == undefined) ) {
+			console.log("newAreaCuring and newValidatorCuring and newAdminCuring are all undefined. Delete this observations.");
+			const queryObservation = new Parse.Query("GCUR_OBSERVATION");
+			queryObservation.equalTo("objectId", objId);
+			const object = await queryObservation.first();
+			await object.destroy();
+		}
 	}
 });
 
 /*
  * after a new Observation is added
  */
-Parse.Cloud.afterSave("GCUR_OBSERVATION", function(request, response) {
+Parse.Cloud.afterSave("GCUR_OBSERVATION", async (request) => {
+	//console.log("*** afterSave triggered - START");
 	var objId = request.object.id;
 	var loc = request.object.get("Location");
 	var locObjId = loc.id;
 	console.log("*** afterSave triggered on GCUR_OBSERVATION [" + objId + "] for GCUR_LOCATION [" + locObjId + "]");
-	
-	if (request.user != undefined) {
-		var queryUser = new Parse.Query(Parse.User);
-		queryUser.equalTo("objectId", request.user.id);
-		
-		// Use the new "useMasterKey" option in the Parse Server Cloud Code to bypass ACLs or CLPs.
-		queryUser.first({ useMasterKey: true }).then(function (user) {
-			var userName = user.get("username");
-			console.log("*** afterSave GCUR_OBSERVATION requested by _User [" + userName + "] [" + request.user.id + "]");
-		}, function(error) {
-			console.log("*** afterSave GCUR_OBSERVATION requested by _User [" + request.user.id + "]");
-			console.error("Parse.User table lookup failed. Error: " + error.code + " " + error.message);
-		});
-	} else {
-		console.log("*** afterSave GCUR_OBSERVATION. Requesting user is undefined.");
-	}
 });
 
 /*
