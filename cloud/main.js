@@ -1162,7 +1162,10 @@ Parse.Cloud.beforeDelete("GCUR_FINALISEMODEL", async (request) => {
 	}
   });
 
-Parse.Cloud.define("deleteRunModelById", function(request, response) {
+/**
+ * Called by adminTools.jsp. action=deleteRunModelJob
+ */
+Parse.Cloud.define("deleteRunModelById", (request) => {
 	var objectId = request.params.objectId;
 	
 	var queryRunModel = new Parse.Query("GCUR_RUNMODEL");
@@ -1173,10 +1176,10 @@ Parse.Cloud.define("deleteRunModelById", function(request, response) {
 		return Parse.Object.destroyAll(results);
 	}, function(error) {
 		console.log("GCUR_RUNMODEL table lookup failed");
-	    response.success(false);
+	    return false;
 	}).then(function() {
 		console.log('GCUR_RUNMODEL record [' + objectId + '] successfully deleted.');
-		response.success(true);
+		return true;
 	}, function(error) {
 		// An error occurred while deleting one or more of the objects.
 		// If this is an aggregate error, then we can inspect each error
@@ -1191,7 +1194,7 @@ Parse.Cloud.define("deleteRunModelById", function(request, response) {
 	    	console.log("Delete aborted because of " + error.message);
 	    }
 		console.log('Failed to delete GCUR_RUNMODEL record[' + objectId + '].');
-		response.success(false);
+		return false;
 	});
 });
 
