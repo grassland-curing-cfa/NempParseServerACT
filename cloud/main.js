@@ -123,8 +123,7 @@ Parse.Cloud.define("sendEmailRequestForValidation", (request) => {
 		var mailgun = require('mailgun-js')({apiKey: MG_KEY, domain: MG_DOMAIN});	
 		
 		var data = {
-			//to: toEmails,
-			to: "a.chen@cfa.vic.gov.au",
+			to: toEmails,
 			cc: CFA_NEMP_EMAIL,
 			from: CFA_NEMP_EMAIL,
 			subject: "ACT - Grassland Curing Validation Notification",
