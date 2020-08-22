@@ -2947,9 +2947,10 @@ Parse.Cloud.define("applyValidationByException", (request) => {
 });
 
 /**
-Automate RunModel by adding a RunModel given defined creteria.
+ * Automate RunModel by adding a RunModel given defined creteria.
+ * Triggered by automated_run_model.py
 */
-Parse.Cloud.define("automateRunModel", function(request, response) {
+Parse.Cloud.define("automateRunModel", (request) => {
 	var executionResult = false;
 	var executionMsg = "";
 	var isJobAdded = false;
@@ -2963,11 +2964,11 @@ Parse.Cloud.define("automateRunModel", function(request, response) {
 	var nowDt = new Date(new Date().toUTCString());
 	var today_utc_ts =  Date.UTC(nowDt.getUTCFullYear(), nowDt.getUTCMonth(), nowDt.getUTCDate(), 0, 0, 0);
 	var greaterThanDt = new Date(today_utc_ts);
-	console.log("Today starting at " + greaterThanDt);
+	//console.log("Today starting at " + greaterThanDt);
 	
 	var queryRunModel = new Parse.Query("GCUR_RUNMODEL");
 	queryRunModel.greaterThan("createdAt", greaterThanDt);
-	queryRunModel.find().then(function(results) {
+	return queryRunModel.find().then(function(results) {
 		
 		switch (results.length) {
 		
@@ -3082,7 +3083,7 @@ Parse.Cloud.define("automateRunModel", function(request, response) {
 				}
 		}
 		
-		return Parse.Promise.as("Current RunModel jobs have been checked. Continue... ...");		
+		return Promise.resolve("Current RunModel jobs have been checked. Continue... ...");		
 	}).then(function() {
 		// Save a new RunModel job based on ResToCreate
 		if (ToCreate) {
@@ -3093,12 +3094,16 @@ Parse.Cloud.define("automateRunModel", function(request, response) {
 			var admin = new Parse.User();
 			admin.id = SUPERUSER_OBJECTID;
 			
-			newRMJob.save({
+			return newRMJob.save({
 				status: 0,
 				resolution: ResToCreate,
 				jobResult: false,
 				submittedBy: admin
-			}, {
+			}, { useMasterKey: true });
+			
+			
+			/*
+			{
 				useMasterKey: true,
 			
 				success: function(obj) {
@@ -3116,29 +3121,29 @@ Parse.Cloud.define("automateRunModel", function(request, response) {
 					response.error({"ToCreate": ToCreate, "ResToCreate": ResToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded});
 				}
 			});
+			*/
 		} else
-			response.success({"ToCreate": ToCreate, "ResToCreate": ResToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded});
+			//response.success({"ToCreate": ToCreate, "ResToCreate": ResToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded});
+			return Promise.resolve({"ToCreate": ToCreate, "ResToCreate": ResToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded});		
+	}).then(function(obj) {
+		// The save was successful.
+		isJobAdded = true;
+		executionMsg += "A new RunModel job with resolution of " + ResToCreate + " has been successfully saved. "
+		console.log(executionMsg);
+		return {"ToCreate": ToCreate, "ResToCreate": ResToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded};
 	}, function(error) {
-		// An error occurred while deleting one or more of the objects.
-		// If this is an aggregate error, then we can inspect each error
-		// object individually to determine the reason why a particular
-		// object was not deleted.
-	    if (error.code === Parse.Error.AGGREGATE_ERROR) {
-	    	for (var i = 0; i < error.errors.length; i++) {
-	          console.log("Couldn't delete " + error.errors[i].object.id +
-	            "due to " + error.errors[i].message);
-	        }
-	    } else {
-	    	console.log("Delete aborted because of " + error.message);
-	    }
-		response.success(false);
+		// The save failed.  Error is an instance of Parse.Error.
+		executionMsg += "There was an error in saving a new RunModel job with resolution of " + ResToCreate;
+		console.log(executionMsg);
+		throw new Parse.Error(1001, {"ToCreate": ToCreate, "ResToCreate": ResToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded});
 	});
 });
 
 /**
-Automate FinaliseData by adding a FinaliseData given defined creteria.
-*/
-Parse.Cloud.define("automateFinaliseData", function(request, response) {
+ * Automate FinaliseData by adding a FinaliseData given defined creteria.
+ * Triggered by automated_finalise_data.py
+ */
+Parse.Cloud.define("automateFinaliseData", (request) => {
 	var executionResult = false;
 	var executionMsg = "";
 	var isJobAdded = false;
@@ -3158,7 +3163,7 @@ Parse.Cloud.define("automateFinaliseData", function(request, response) {
 	// This is for double check to be more secure that we are not adding a FinaliseData job if RunModels were not successful.
 	var queryRunModel = new Parse.Query("GCUR_RUNMODEL");
 	queryRunModel.greaterThan("createdAt", greaterThanDt);
-	queryRunModel.find().then(function(results) {
+	return queryRunModel.find().then(function(results) {
 		
 		switch (results.length) {
 		
@@ -3241,9 +3246,9 @@ Parse.Cloud.define("automateFinaliseData", function(request, response) {
 		console.log(executionMsg);
 		
 		if (isRunModelsSuccessful) {
-			return Parse.Promise.as("isRunModelsSuccessful is true!");
+			return Promise.resolve("isRunModelsSuccessful is true!");
 		} else {
-			return Parse.Promise.error("isRunModelsSuccessful is false!");	// Go straight to the error callback at the end
+			return Promise.reject("isRunModelsSuccessful is false!");	// Go straight to the error callback at the end
 		}		
 	}).then(function() {	
 		var queryFinaliseData = new Parse.Query("GCUR_FINALISEMODEL");
@@ -3289,7 +3294,7 @@ Parse.Cloud.define("automateFinaliseData", function(request, response) {
 					console.log(executionMsg);
 		}
 			
-		return Parse.Promise.as("Current FinaliseData jobs have been checked. Continue... ...");		
+		return Promise.resolve("Current FinaliseData jobs have been checked. Continue... ...");		
 	}).then(function() {
 		// Save a new FinalisedData job based on ResToCreate
 		if (ToCreate) {
@@ -3300,12 +3305,14 @@ Parse.Cloud.define("automateFinaliseData", function(request, response) {
 			var admin = new Parse.User();
 			admin.id = SUPERUSER_OBJECTID;
 			
-			newFDJob.save({
+			return newFDJob.save({
 				status: 0,
 				jobResult: false,
 				submittedBy: admin
-			}, {
-				useMasterKey: true,
+			}, { useMasterKey: true });
+
+
+				/*
 			
 				success: function(obj) {
 					// The save was successful.
@@ -3321,83 +3328,20 @@ Parse.Cloud.define("automateFinaliseData", function(request, response) {
 					console.log(executionMsg);
 					response.error({"ToCreate": ToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded, 'error': error});
 				}
-			});
+				*/
+			
 		} else
-			response.success({"ToCreate": ToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded});
+			return Promise.resolve({"ToCreate": ToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded});
+	}).then(function(obj) {
+		// The save was successful.
+		isJobAdded = true;
+		executionMsg += "A new FinalisedData job has been successfully saved. "
+		console.log(executionMsg);
+		return {"ToCreate": ToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded};
 	}, function(error) {
-		response.error({"ToCreate": ToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded, 'error': error});
+		throw new Parse.Error(1001, {"ToCreate": ToCreate, 'executionMsg': executionMsg, 'isJobAdded': isJobAdded, 'error': error});
 	});
 });
-
-/*
-Parse.Cloud.define("finaliseAdjustByDistAndLocOnParse", function(request, response) {
-	Parse.Cloud.useMasterKey();
-	
-	// Change all GCUR_ADJUST_DISTRICT records with status being 1 to 2
-	queryPrev = new Parse.Query("GCUR_ADJUST_DISTRICT");
-	queryPrev.equalTo("status", 1);
-	queryPrev.limit(1000);
-	queryPrev.find().then(function(prev_adjustDistricts) {
-		for (var i = 0; i < prev_adjustDistricts.length; i ++) {
-			var abd = prev_adjustDistricts[i];
-			abd.set("status", 2);
-		}
-		return Parse.Object.saveAll(prev_adjustDistricts);
-	}).then(function() {
-		console.log("All GCUR_ADJUST_DISTRICT records with status being 1 have been succssfully changed to archived records.");
-		
-		// Find all current GCUR_ADJUST_DISTRICT records with status being 0
-		queryCurr = new Parse.Query("GCUR_ADJUST_DISTRICT");
-		queryCurr.equalTo("status", 0);
-		queryCurr.limit(1000);
-		return queryCurr.find();
-	}).then(function(curr_adjustDistricts) {
-		for (var i = 0; i < curr_adjustDistricts.length; i ++) {
-			var abd = curr_adjustDistricts[i];
-			
-			// Set current to previous
-			abd.set("status", 1);
-		}
-		return Parse.Object.saveAll(curr_adjustDistricts);
-	}).then(function(list) {
-		console.log("All current GCUR_ADJUST_DISTRICT records have been succssfully updated to previous records.");
-		
-		// Change all GCUR_ADJUST_LOCATION records with status being 1 to 2
-		queryPrev = new Parse.Query("GCUR_ADJUST_LOCATION");
-		queryPrev.equalTo("status", 1);
-		queryPrev.limit(1000);
-		return queryPrev.find();
-	}).then(function(prev_adjustLocations) {
-		for (var i = 0; i < prev_adjustLocations.length; i ++) {
-			var abl = prev_adjustLocations[i];
-			abl.set("status", 2);
-		}
-		return Parse.Object.saveAll(prev_adjustLocations);
-	}).then(function() {
-		console.log("All GCUR_ADJUST_LOCATION records with status being 1 have been succssfully changed to archived records.");
-		
-		// Find all current GCUR_ADJUST_LOCATION records with status being 0
-		queryCurr = new Parse.Query("GCUR_ADJUST_LOCATION");
-		queryCurr.equalTo("status", 0);
-		queryCurr.limit(1000);
-		return queryCurr.find();
-	}).then(function(curr_adjustLocations) {
-		for (var i = 0; i < curr_adjustLocations.length; i ++) {
-			var abl = curr_adjustLocations[i];
-			
-			// Set current to previous
-			abl.set("status", 1);
-		}
-		return Parse.Object.saveAll(curr_adjustLocations);
-	}).then(function(list) {
-		// All the objects were saved.
-		console.log("All current GCUR_ADJUST_LOCATION records have been succssfully updated to previous records.");
-		response.success();  //saveAll is now finished and we can properly exit with confidence :-)
-	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
-	});
-});
-*/
 
 /**
  * An Underscore utility function to find elements in array that are not in another array;
