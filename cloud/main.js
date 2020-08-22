@@ -188,7 +188,7 @@ Parse.Cloud.define("sendEmailWantToBecomeObserver", (request) => {
 });
 
 //Send a "Welcome email to new user upon signed-up" via Mailgun
-Parse.Cloud.define("sendEmailWelcomeNewUser", function(request, response) {
+Parse.Cloud.define("sendEmailWelcomeNewUser", (request) => {
 	var mailgun = require('mailgun-js')({apiKey: MG_KEY, domain: MG_DOMAIN});
 	
 	var firstname = request.params.fn;
@@ -221,7 +221,7 @@ Parse.Cloud.define("sendEmailWelcomeNewUser", function(request, response) {
 				'<p>Kind Regards,</p>' + 
 				'<p>The NEMP Grassland Curing Team</p>' + 
 				'<br>' + 
-				'<table><tr><td width="30%"><img src="http://www.cfa.vic.gov.au/img/logo.png" width="64" height="64" alt="CFA_LOGO" /></td>' + 
+				'<table><tr><td width="15%"><img src="https://cdn.cfa.vic.gov.au/o/cfa-theme/images/cfa-logo.png" width="64" height="64" alt="CFA_LOGO" /></td>' + 
 				'<td><p style="color:#C00000; font-weight: bold;">NEMP Grassland Curing Team</p><p>CFA HQ - Fire & Emergency Management - 8 Lakeside Drive, Burwood East, Victoria, 3151</p>' + 
 				'<p>E: <a href="mailto:' + CFA_NEMP_EMAIL + '" target="_top">' + CFA_NEMP_EMAIL + '</a></p></td></tr></table>' + 
 				'<br>' + 
@@ -229,7 +229,7 @@ Parse.Cloud.define("sendEmailWelcomeNewUser", function(request, response) {
 				'</body>' + 
 				'</html>';
 	
-	mailgun.messages().send({
+	return mailgun.messages().send({
 		to: email,
 		bcc: CFA_NEMP_EMAIL,
 		from: CFA_NEMP_EMAIL,
@@ -238,9 +238,9 @@ Parse.Cloud.define("sendEmailWelcomeNewUser", function(request, response) {
 		html: html
 	}, function (error, body) {
 		if (error)
-			response.error("" + error);    
+			throw new Error(error);
 		else
-			response.success(body);
+			return body;
 	});
 });
 
