@@ -114,7 +114,7 @@ var validationRequestEmailHtml = '<!DOCTYPE html><html>' +
 			'</body>' + 
 			'</html>';
 
-Parse.Cloud.define("sendEmailRequestForValidation", function(request, response) {
+Parse.Cloud.define("sendEmailRequestForValidation", (request) => {
 	console.log('Function [sendEmailRequestForValidation] being executed...');
 	
 	if (_IS_FIRE_DANGER_PERIOD) {
@@ -131,14 +131,14 @@ Parse.Cloud.define("sendEmailRequestForValidation", function(request, response) 
 			html: validationRequestEmailHtml
 		};
 
-		mailgun.messages().send(data, function (error, body) {
+		return mailgun.messages().send(data, function (error, body) {
 			if (error) {
 				console.log(error);
-				response.error("" + error);
+				throw new Error("" + error);
 			}
 			else {
 				console.log(body);
-				response.success(body);
+				return "" + body;
 			}
 		});
 	} else
