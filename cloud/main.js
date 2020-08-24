@@ -992,7 +992,10 @@ Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", (request) => {
 	});
 });
 
-Parse.Cloud.define("updateSharedByInfo", function(request, response) {
+/**
+ * Update the ShareBy info (column) in the GCUR_OBSERVATION class for sharing by the jurisdiction hosting the online system
+ */
+Parse.Cloud.define("updateSharedByInfo", (request) => {
 	/*
 	 * "{\"forState\":\"NSW\", \"sharedInfos\":[{\"obsObjId\":\"syCUGywaao\", \"sh\":true},{\":[{\"obsObjId\":\"TuhtjP9rke\", \"sh\":false},{\":[{\"obsObjId\":\"YEWf4x4oSl\", \"sh\":true}]}" 
 	 */
@@ -1009,7 +1012,7 @@ Parse.Cloud.define("updateSharedByInfo", function(request, response) {
 	var queryObservation = new Parse.Query("GCUR_OBSERVATION");
 	queryObservation.containedIn("objectId", obsObjIds);
 	queryObservation.limit(1000);
-	queryObservation.find().then(function(obs) {
+	return queryObservation.find().then(function(obs) {
 		// loops through all Observation records contained in the input obs list
 		for (var j = 0; j < obs.length; j ++) {
 			for (var i = 0; i < sharedInfos.length; i ++) {
@@ -1032,14 +1035,13 @@ Parse.Cloud.define("updateSharedByInfo", function(request, response) {
 				}
 			}
 		}
-		return Parse.Object.saveAll(obs);
-		//return response.success();
+		return Parse.Object.saveAll(obs, { useMasterKey: true });
 	}).then(function(obsList) {
 		// All the objects were saved.
 		console.log("Updated SharedBy column on GCUR_OBSERVATION table. Updated obs count: " + obsList.length);
-		response.success(true);  //saveAll is now finished and we can properly exit with confidence :-)
+		return true;  //saveAll is now finished and we can properly exit with confidence :-)
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
