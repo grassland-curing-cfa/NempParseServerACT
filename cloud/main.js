@@ -820,7 +820,7 @@ Parse.Cloud.define("getPrevSimpleObsSharedInfoForState", async (request) => {
  * Retrieve previous curing values (shared only!) for shared locations for State
  * This Cloud function is called from the VISCA model directly!
  */
-Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", function(request, response) {
+Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", (request) => {
 	var stateName = request.params.state;
 	
 	var isBufferZonePntsForStateApplied = true;
@@ -833,16 +833,16 @@ Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", function(reques
 
 	// Find the "bufferZonePnts" for the input jurisdiction
 	// "bufferZonePnts" can be either the set point array, or "null" or "undefined" as well.
-	querySharedJurisSettings.first().then(function(jurisSetting) {
+	return querySharedJurisSettings.first().then(function(jurisSetting) {
 		bufferZonePntsForState = jurisSetting.get("bufferZonePnts");
 			
 		if ((bufferZonePntsForState == null) || (bufferZonePntsForState == undefined))
 			isBufferZonePntsForStateApplied = false;
 			
-		return Parse.Promise.as("'bufferZonePnts' is found for jurisdiction " + stateName);
+		return Promise.resolve("'bufferZonePnts' is found for jurisdiction " + stateName);
 	}, function(error) {
 		console.log("There was an error in finding Class 'GCUR_SHARED_JURIS_SETTINGS', but we continue to find previous observations.");
-		return Parse.Promise.as("There was an error in finding Class 'GCUR_SHARED_JURIS_SETTINGS', but we continue to find previous observations.");
+		return Promise.resolve("There was an error in finding Class 'GCUR_SHARED_JURIS_SETTINGS', but we continue to find previous observations.");
 	}).then(function() {
 		console.log("isBufferZonePntsForStateApplied = " + isBufferZonePntsForStateApplied + " for " + stateName);
 	
@@ -870,22 +870,26 @@ Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", function(reques
 					
 					var obsObjId = obs[j].id;
 					
-					var prevOpsCuring;
+					var prevOpsCuring = undefined;
 					if (obs[j].has("AdminCuring")) {
 						prevOpsCuring = obs[j].get("AdminCuring");
 					} else if (obs[j].has("ValidatorCuring")) {
 						prevOpsCuring = obs[j].get("ValidatorCuring");
-					} else {
+					} else if (obs[j].has("AreaCuring")) {
 						prevOpsCuring = obs[j].get("AreaCuring");
+					}
+					
+					if (prevOpsCuring == undefined) {
+						console.log(locName + " [" + locObjId + "] has no prevOpsCuring, so will not proceed to the further process.");
 					}
 					
 					// In Array; convert raw string to JSON Array
 					// For example, "[{"st":"VIC","sh":false},{"st":"QLD","sh":true},{"st":"NSW","sh":true}]"
-					if (obs[j].has("SharedBy")) {
+					if (obs[j].has("SharedBy") && (prevOpsCuring != undefined)) {
 						
 						var sharedByInfo = JSON.parse(obs[j].get("SharedBy"));
 						
-						var isSharedByState;
+						//var isSharedByState;
 						
 						for (var p = 0; p < sharedByInfo.length; p ++) {
 							if ( (sharedByInfo[p]["st"] == stateName) && (sharedByInfo[p]["sh"]) ) {
@@ -939,8 +943,8 @@ Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", function(reques
 			searchWithin["features"][0]["geometry"]["coordinates"].push(bufferZonePntsForState);
 
 			var pointsToCheck = {
-					"type": "FeatureCollection",
-					"features": []
+				"type": "FeatureCollection",
+				"features": []
 			};
 			
 			for (var j = 0; j < sharedObsArr.length; j++) {
@@ -949,12 +953,12 @@ Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", function(reques
 				var lng = sharedObsArr[j]["lng"];
 				
 				var featureObj = {
-						"type": "Feature",
-					    "properties": {"obsObjId" : obsObjId},
-					    "geometry": {
-					    	"type": "Point",
-					    	"coordinates": [lng, lat]
-					    }
+					"type": "Feature",
+					"properties": {"obsObjId" : obsObjId},
+					"geometry": {
+					    "type": "Point",
+					    "coordinates": [lng, lat]
+					}
 				};
 				
 				pointsToCheck["features"].push(featureObj);
@@ -982,9 +986,9 @@ Parse.Cloud.define("getSharedPrevCuringForStateForInputToVISCA", function(reques
 			};
 		}
 		
-		return response.success(returnedObj);
+		return returnedObj;
 	}, function(error) {
-		response.error("Error: " + error.code + " " + error.message);
+		throw new Error("Error: " + error.code + " " + error.message);
 	});
 });
 
