@@ -638,6 +638,7 @@ Parse.Cloud.afterSave("GCUR_LOCATION", function(request, response) {
 
 /**
  * Retrieve shared infos for shared locations for State
+ * Called from the portal from one other jurisdiction
  */
 Parse.Cloud.define("getPrevSimpleObsSharedInfoForState", async (request) => {
 	const stateName = request.params.state;
