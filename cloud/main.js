@@ -11,6 +11,7 @@
 								02/12/2016: NEMP-1-151: Remove unnecessary Parse.User.logIn(SUPERUSER, SUPERPASSWORD) and Parse.Cloud.useMasterKey() in the Cloud function
 								30/08/2018: Created two cloud functions: "automateRunModel" & "automateFinaliseData" on the Parse Server for automating RunModel and FinaliseData jobs
 								20/08/2020: Started to upgrade all Cloud functions to Parse-server 3+.
+								25/08/2020: Finished upgrading all Cloud functions to Parse-server 3+.
  */
 
 var _ = require('underscore');
@@ -142,7 +143,7 @@ Parse.Cloud.define("sendEmailRequestForValidation", (request) => {
 			}
 		});
 	} else
-		response.success("_IS_FIRE_DANGER_PERIOD: " + _IS_FIRE_DANGER_PERIOD + "; No RequestForValidation email to be sent.");
+		return Promise.resolve("_IS_FIRE_DANGER_PERIOD: " + _IS_FIRE_DANGER_PERIOD + "; No RequestForValidation email to be sent.");
 });
 	  
 // Send a "Want to become an observer" email via Mailgun
@@ -434,112 +435,6 @@ Parse.Cloud.define("deleteUserByUsername", (request) => {
 		return false;
 	});
 });
-
-/*
-Parse.Cloud.define("getRolesForUserObjectId", function(request, response) {
-var userObjectId = null;
-var roleName = null;
-var roleArray = [];
-
-// Log-in required dued to class-level security set on ROLE table
-Parse.User.logIn(SUPERUSER, SUPERPASSWORD).then(function(user) {
-  var queryUser = new Parse.Query(Parse.User);
-  queryUser.equalTo("objectId", request.params.objectId);
-  return queryUser.first();
-}).then(function(usr) {
-  if (usr != undefined) {
-      // username has been found
-		userObjectId = usr.id;
-		var queryRole = new Parse.Query(Parse.Role);
-		return queryRole.find();
-  } else {
-		// username not found and a Promise is thrown out
-		return Parse.Promise.error("There was an error in finding the user.");
-  }
-}).then(function(results) {
-  //response.success(roles.length);
-  // Create a trivial resolved promise as a base case.
-  var promises = [];
-  _.each(results, function(result) {
-      // query for all Users that have been granted the each role
-      var queryUsersInRole = result.getUsers().query();
-      
-      promises.push(queryUsersInRole.find(
-      {
-          success : function(usrs) {        	
-              for(var j = 0; j < usrs.length; j ++) {
-      		    if (userObjectId == usrs[j].id) {
-      		    	roleArray.push(result);
-      			    break;
-      		    }
-      	    }
-          },
-          error : function(error) {
-              return Parse.Promise.error("There was an error in finding users in a Role.");
-          }
-      }));
-  });
-  // Return a new promise that is resolved when all of the deletes are finished.
-  return Parse.Promise.when(promises);
-}).then(function() {
-  // Every comment was deleted.
-  response.success(roleArray);
-}, function(error) {
-  response.error(error);
-});
-});
-
-Parse.Cloud.define("getMaxLocationId", function(request, response) {
-// Log-in required dued to ACL set on GCUR_LOCATION table with Roles and Users
-Parse.User.logIn(SUPERUSER, SUPERPASSWORD).then(function(user) {
-  var query = new Parse.Query("GCUR_LOCATION");
-  return query.find();
-}).then(function(results) {
-  var max = 0;
-  for (var i = 0; i < results.length; ++i) {
-	   var id = parseInt(results[i].get("LocationId"));
-      if (id > max) {
-		max = id;
-	  }
-  }
-
-  response.success(max);	
-}, function(error) {
-  response.error("Location table lookup failed");
-});
-});
-
-Parse.Cloud.beforeSave("GCUR_LOCATION", function(request, response) {
-Parse.Cloud.run("getMaxLocationId", {}, {
-  success: function(result) {
-    // result is the max number of location id
-
-	var query = new Parse.Query("GCUR_LOCATION");
-	query.equalTo("objectId", request.object.id);
-	query.find({
-		success: function(results) {
-  		// The object was retrieved successfully.
-
-			// Only when a new location is created, LocationId is amended!!!
-			if (results.length == 0) {
-				request.object.set("LocationId", result + 1);
-			}
-			
-    		response.success();
-		},
-		error: function(error) {
-  		// The object was not retrieved successfully.
-  		// error is a Parse.Error with an error code and message.
-			response.error("Table GCUR_LOCATION lookup execution failed");
-		}
-	});
-  },
-  error: function(error) {
-    response.error("Cloud function getMaxLocationId execution failed");
-  }
-});
-});
-*/
 
 /**
  * Populate all ShareBy{STATE} columns available by "True" beforeSave a new Observation is added
@@ -2714,14 +2609,6 @@ Parse.Cloud.define("getDataReport", (request) => {
 	}, function(error) {
 		throw new Error("Error: " + error.code + " " + error.message);
 	});
-});
-
-/**
- * Get the most recent observations as downloadable observation report by the user-specified Date;
- * This was designed for sharing observations across different jurisdictions.
- */
-Parse.Cloud.define("getMostRecentDataReportByDate", function(request, response) {
-	
 });
 
 /**
