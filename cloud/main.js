@@ -11,7 +11,7 @@
 								02/12/2016: NEMP-1-151: Remove unnecessary Parse.User.logIn(SUPERUSER, SUPERPASSWORD) and Parse.Cloud.useMasterKey() in the Cloud function
 								30/08/2018: Created two cloud functions: "automateRunModel" & "automateFinaliseData" on the Parse Server for automating RunModel and FinaliseData jobs
 								20/08/2020: Started to upgrade all Cloud functions to Parse-server 3+.
-								25/08/2020: Finished upgrading all Cloud functions to Parse-server 3+.
+								25/08/2020: Finished upgrading all Cloud functions to Parse-server 3+. 
  */
 
 var _ = require('underscore');
